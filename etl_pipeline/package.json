@@ -7,7 +7,10 @@
     "etl": "node --max-old-space-size=4096 src/etl.js"
   },
   "dependencies": {
-    "proj4": "^2.22.0",
+    "proj4": "^2.22.0", 
     "shapefile": "^0.6.6"
   }
 }
+
+
+

@@ -1,28 +1,46 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import readline from 'node:readline';
-import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import * as shapefile from 'shapefile';
-import proj4 from 'proj4';
+// this is the primary Node.js ETL script for the Urban Mobility Data explory project 
+//data was extracted from the SUmmative link https://alueducation.instructure.com/courses/3138/assignments/44952 for the NYC dataset
 
+//Author: Joshua Mulongo 
+//GitHUb Username: @gunnogere
+//GItHub Repo: Team4C1_Summative_Urban_Mobility_Data_Explorer
+
+//The goal of this script is to extract, transform, and load (stage) the NYC taxi trip data into a cleaned JSON data format 
+//from the JSON format, this data can then be easily loaded into a database  by the team mate handling  teh database tasks of the group assignement 
+
+//I chose to go with Node.js and not python because my familiarity with it but also because of its non-blocking input/output model which is important for handling large datasets more efficiently comapred to Python.
+
+
+//import modules needed for the ETL process
+import fs from 'node:fs'; // import the Node.js file system module to be used for writing and reading files
+import path from 'node:path'; // this module provides utilitoes for working with files and directory paths 
+import readline from 'node:readline'; // to provide an interface for reading data from a data stream
+import crypto from 'node:crypto'; // for cryptopgrahic operations suc as hasing
+import { fileURLToPath } from 'node:url'; // convert file URLs to a file path
+import * as shapefile from 'shapefile'; //shapefile module for reading shapefiles in the NYC provided datasets
+import proj4 from 'proj4'; // for coordinate system transformations 
+
+
+//declare constants to use acrross the entire ETL pipeline
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 const RAW = path.join(ROOT, 'raw_data');
 const OUT = path.join(ROOT, 'cleaned_json_data');
 const DOCS = path.resolve(ROOT, '..', 'docs');
+const TRIP_FILE = path.join(RAW, 'yellow_tripdata_2019-01.csv'); //source file for trip data. the file is quite large and ehence excluded from commit (version control)
+const LOOKUP_FILE = path.join(RAW, 'taxi_zone_lookup.csv'); //this is the timezone look up file joined for better understanding of dthe code.
 
-const TRIP_FILE = path.join(RAW, 'yellow_tripdata_2019-01.csv');
-const LOOKUP_FILE = path.join(RAW, 'taxi_zone_lookup.csv');
-const SHP_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.shp');
+//Variables to store .shp , .dbf, .prj files
+const SHP_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.shp'); 
 const DBF_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.dbf');
 const PRJ_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.prj');
 
 // Reference month of the file; records outside it are temporal anomalies.
-const MONTH_START = Date.UTC(2019, 0, 1);
-const MONTH_END = Date.UTC(2019, 1, 1);
-const MAX_LOCATION_ID = 265;
+// define the start and end of reference month
+const MONTH_START = Date.UTC(2019, 0, 1); // 
+const MONTH_END = Date.UTC(2019, 1, 1); 
 
+// limits and constraints for validating trip data
 const LIMITS = {
   maxDistanceMi: 100,
   maxFare: 500,
@@ -34,11 +52,14 @@ const LIMITS = {
   totalToleranceUsd: 1,
 };
 
+// reference data for vendors, rates codes and payment types as from anaylsis of .CSV file
 const VENDORS = [
   { vendor_id: 1, vendor_name: 'Creative Mobile Technologies, LLC' },
   { vendor_id: 2, vendor_name: 'VeriFone Inc.' },
   { vendor_id: 4, vendor_name: 'Vendor 4 (undocumented in 2019 data dictionary)' },
 ];
+
+// reference data for rate codes as from the analysis of the CSv file
 const RATE_CODES = [
   { rate_code_id: 1, description: 'Standard rate' },
   { rate_code_id: 2, description: 'JFK' },
@@ -47,6 +68,8 @@ const RATE_CODES = [
   { rate_code_id: 5, description: 'Negotiated fare' },
   { rate_code_id: 6, description: 'Group ride' },
 ];
+
+// reference data for the payment types as from the analysis of the CSV file
 const PAYMENT_TYPES = [
   { payment_type_id: 1, description: 'Credit card' },
   { payment_type_id: 2, description: 'Cash' },
@@ -56,8 +79,9 @@ const PAYMENT_TYPES = [
   { payment_type_id: 6, description: 'Voided trip' },
 ];
 
-// ---------- helpers ----------
+// ---------- helper functions ----------
 
+// this method writes data into a the specified file
 class Writer {
   constructor(file) {
     this.stream = fs.createWriteStream(file);
@@ -71,6 +95,10 @@ class Writer {
 }
 
 // Writes a valid JSON array with one record per line.
+//one record per lines avoids trying to overload memory by attempting to load the entire array ata once
+// this was optimsied after the ETL froze due to memory oveload 
+//this was recalled from the class meeting about time and memory complexities 
+
 class JsonArrayWriter extends Writer {
   constructor(file) {
     super(file);
@@ -91,6 +119,9 @@ class JsonArrayWriter extends Writer {
   }
 }
 
+// JsonArrayWriter function writes an array of JSON objectins into thespecified file one record at a time
+//this per line write is important as it prevent memory overload as mentioned above
+
 async function writeJson(name, data) {
   const w = new JsonArrayWriter(path.join(OUT, name));
   await w.open();
@@ -106,6 +137,7 @@ const round = (v, d) => {
 };
 
 // Parses 'YYYY-MM-DD HH:MM:SS' strictly; returns epoch ms (treated as local wall-clock) or NaN.
+// data cleaning and parsing fucntion for timestamp and numeric values
 const TS_RE = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/;
 function parseTs(s) {
   const m = TS_RE.exec(s);
@@ -124,7 +156,7 @@ const intOrNaN = (s) => {
 };
 
 // ---------- dimension: zone lookup ----------
-
+// loda timezone looks 
 function loadLookup() {
   const lines = fs.readFileSync(LOOKUP_FILE, 'utf8').split(/\r?\n/).filter(Boolean).slice(1);
   const zones = [];
@@ -145,7 +177,7 @@ function loadLookup() {
 }
 
 // ---------- spatial metadata: taxi_zones shapefile -> WGS84 GeoJSON ----------
-
+// convert taxi_zone shapefile into geojson
 function ringStats(ring) {
   let a = 0, cx = 0, cy = 0;
   for (let i = 0; i < ring.length - 1; i++) {
@@ -159,6 +191,7 @@ function ringStats(ring) {
   return { a: a / 2, cx, cy };
 }
 
+// load geometrics from shapefile and convert to WGS84 GeoJson
 async function loadGeometries() {
   const wkt = fs.readFileSync(PRJ_FILE, 'utf8');
   const toWgs = proj4(wkt, 'EPSG:4326');
@@ -182,6 +215,8 @@ async function loadGeometries() {
     byId.set(id, entry);
   }
 
+
+  // convert the aggregated geometrics to GeoJSON featues
   const result = [];
   for (const [id, e] of [...byId].sort((x, y) => x[0] - y[0])) {
     const [lon, lat] = toWgs.forward([e.CX / e.A, e.CY / e.A]);
@@ -202,6 +237,12 @@ async function loadGeometries() {
 }
 
 // ---------- fact: trips ----------
+// load the trip data and process it into json while applying exclusions and corections 
+// this is impportant for ensuring that the trpi data is cleaned based on the rules in this ETL Pipeline
+// an example of an exclusion is a row that has a an invalid timestamp or  missing column value 
+// a correction in his case might inlude the fixing for an invliade timepat, or eplace a blank vaule with a default null instead
+// cleanups are improtant and a baseline for data analysis
+//hnce this step in the ETL process is critical. 
 
 async function processTrips(zoneMap) {
   const tripsOut = new JsonArrayWriter(path.join(OUT, 'trips.json'));
@@ -284,6 +325,8 @@ async function processTrips(zoneMap) {
     seen.add(key);
 
     // correctable fields: set to null instead of dropping the trip
+    // correctble fields are those thatr can be fixed or  set to a default value instead of dropping the entore trip row
+    // examples include invalid passenger count as a it wpuld not be a trip at all if there was no passender (null or zero)
     let pax = intOrNaN(paxS);
     if (Number.isNaN(pax) || pax < 1 || pax > LIMITS.maxPassengers) {
       events.push(['CORRECTED', 'PASSENGER_COUNT_INVALID', `passenger_count='${paxS}' set to NULL`]);
@@ -301,6 +344,7 @@ async function processTrips(zoneMap) {
     }
 
     // suspicious but kept
+    // these are records we suspsect might have issues but are not outrightly invalid
     const computed = fare + extra + mta + tip + tolls + imp + cong;
     if (Math.abs(computed - total) > LIMITS.totalToleranceUsd) {
       events.push(['FLAGGED', 'TOTAL_MISMATCH', `sum of components=${round(computed, 2)} total_amount=${total}`]);
@@ -315,6 +359,7 @@ async function processTrips(zoneMap) {
     }
 
     // derived features
+  // derive additonal features from the existing trip data
     const pDate = new Date(pickup);
     const hour = pDate.getUTCHours();
     const dow = pDate.getUTCDay(); // 0=Sunday
@@ -322,6 +367,7 @@ async function processTrips(zoneMap) {
     const rush = !weekend && ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 20));
     const puBorough = zoneMap.get(puLoc).borough, doBorough = zoneMap.get(doLoc).borough;
 
+    // from teh .csv analysis: these are the derived features we want to include in the output JSON file
     await tripsOut.push({
       trip_id: rowNo,
       vendor_id: vendor,
@@ -362,8 +408,14 @@ async function processTrips(zoneMap) {
 
 // ---------- main ----------
 
+// purpose: the function is the 'big boy' that orchestrated the entire ETL process for the trip data
+// it uses the custom fucntions codes above  and loads the ETL pipeline for processing the tip data
+// it also genearates summary stattistics ad wrotes them into the exclusion summary json file
+// 
+
+
 async function main() {
-  fs.mkdirSync(OUT, { recursive: true });
+  fs.mkdirSync(OUT, { recursive: true }); 
   fs.mkdirSync(DOCS, { recursive: true });
   const t0 = Date.now();
 
@@ -380,14 +432,17 @@ async function main() {
     geometry_ids_not_in_lookup: [...geomIds].filter((id) => !zoneMap.has(id)),
   };
 
-  await writeJson('zones.json', zones);
-  await writeJson('zone_geometries.json', geoms);
-  await writeJson('vendors.json', VENDORS);
-  await writeJson('rate_codes.json', RATE_CODES);
-  await writeJson('payment_types.json', PAYMENT_TYPES);
+  await writeJson('zones.json', zones); //  write zone lookups into its outpu file
+  await writeJson('zone_geometries.json', geoms); // write zone geometrics into its outpu file
+  await writeJson('vendors.json', VENDORS); // write vendor lookups into their json file
+  await writeJson('rate_codes.json', RATE_CODES); // write rate code lookups into their respective json file
+  await writeJson('payment_types.json', PAYMENT_TYPES); // write payment type lookups into their respective jsn file
 
-  console.log('Processing trips...');
-  const stats = await processTrips(zoneMap);
+  console.log('Processing trips...'); // write to terminal for UI feel 
+
+  // i used awit to ensure that the trip processing completes before moving on to the next step
+  // this (awaits) ensures clean error handling
+  const stats = await processTrips(zoneMap); 
 
   const summary = { generated_at: new Date().toISOString(), source: path.basename(TRIP_FILE), limits: LIMITS, spatial, ...stats };
   fs.writeFileSync(path.join(DOCS, 'Exclusion_Summary.json'), JSON.stringify(summary, null, 2));
@@ -395,4 +450,8 @@ async function main() {
   console.log(`Done in ${round((Date.now() - t0) / 1000, 1)}s`);
 }
 
+
+// the is the entry point for the ETL process 
+// it calls the main fucntion and handles any uncaught errors by logging them and exiting the process
+// this ensures that unhandles errrors are propely loggd and  the process exits gracefully 
 main().catch((e) => { console.error(e); process.exit(1); });
