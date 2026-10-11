@@ -10,6 +10,10 @@ Task sheet: https://docs.google.com/spreadsheets/d/1WCFntWARypndTvvnE96RubS0UG_T
 
 Team Planning Doc: https://docs.google.com/document/d/1jQuOwPN_1ZjwMtXqNTbaHISczCsolq53KYHSFq-uKns/edit?tab=t.0
 
+Summary of task:
+- Ingest raw datasets (.parquet trip records, taxi_zone_lookup.csv, and taxi_zones.geojson) using Python.
+- Clean records by filtering negative fare amounts, missing coordinates, zero-distance records, and logical outliers.
+
 This folder cleans the raw NYC Yellow Taxi data and saves it as JSON files, one file per database table.
 
 **ETL** means:
