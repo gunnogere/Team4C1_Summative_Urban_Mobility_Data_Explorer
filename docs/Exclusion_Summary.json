@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-10-11T15:16:24.489Z",
+  "source": "yellow_tripdata_2019-01.csv",
+  "limits": {
+    "maxDistanceMi": 100,
+    "maxFare": 500,
+    "maxTotal": 1000,
+    "maxDurationMin": 1440,
+    "minDurationSec": 30,
+    "maxSpeedMph": 100,
+    "maxPassengers": 6,
+    "totalToleranceUsd": 1
+  },
+  "spatial": {
+    "lookup_zones": 265,
+    "zones_with_geometry": 260,
+    "lookup_zones_without_geometry": [
+      57,
+      104,
+      105,
+      264,
+      265
+    ],
+    "geometry_ids_not_in_lookup": []
+  },
+  "rows_read": 7667792,
+  "rows_kept": 7590347,
+  "rows_excluded": 77445,
+  "excluded_by_reason": {
+    "NON_POSITIVE_DISTANCE": 51775,
+    "DURATION_TOO_SHORT": 14078,
+    "PICKUP_OUT_OF_RANGE": 508,
+    "SPEED_OUTLIER": 1132,
+    "NEGATIVE_AMOUNT": 7140,
+    "ZERO_FARE": 2426,
+    "DISTANCE_OUTLIER": 27,
+    "DURATION_OUTLIER": 4,
+    "NON_POSITIVE_DURATION": 322,
+    "FARE_OUTLIER": 33
+  },
+  "corrected_by_reason": {
+    "PASSENGER_COUNT_INVALID": 115073,
+    "RATE_CODE_INVALID": 106
+  },
+  "flagged_by_reason": {
+    "UNKNOWN_ZONE": 169055,
+    "TOTAL_MISMATCH": 15717
+  }
+}

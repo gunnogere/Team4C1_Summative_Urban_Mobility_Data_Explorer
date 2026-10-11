@@ -1,0 +1,8 @@
+[
+{"rate_code_id":1,"description":"Standard rate"},
+{"rate_code_id":2,"description":"JFK"},
+{"rate_code_id":3,"description":"Newark"},
+{"rate_code_id":4,"description":"Nassau or Westchester"},
+{"rate_code_id":5,"description":"Negotiated fare"},
+{"rate_code_id":6,"description":"Group ride"}
+]
