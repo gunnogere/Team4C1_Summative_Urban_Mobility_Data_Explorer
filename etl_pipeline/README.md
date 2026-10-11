@@ -1,4 +1,4 @@
-# ETL Pipeline
+# ETL Pipeline Task assignment (1/4 Tasks)
 
 | Field | Value |
 |---|---|
@@ -116,7 +116,7 @@ You should see 6 `.json` files. `docs/Exclusion_Log.csv` and `docs/Exclusion_Sum
 | `JavaScript heap out of memory` | Use `npm run etl` (not plain `node`), and close other programs. |
 | `ENOSPC` | Not enough disk space. Free up about 6 GB. |
 
-## 5. What we did (steps)
+## 5. What we did for the ETL process (step by step)
 
 1. **Load the zone lookup** (`taxi_zone_lookup.csv`) and turn `N/A` values into `null`.
 2. **Load the zone map** (`taxi_zones` shapefile). Convert the coordinates to WGS84 (latitude/longitude), and
@@ -126,7 +126,7 @@ You should see 6 `.json` files. `docs/Exclusion_Log.csv` and `docs/Exclusion_Sum
 5. **Add derived features** to the good trips.
 6. **Write the JSON files** and the summary.
 
-## 6. Output files (`cleaned_json_data/`)
+## 6. Output files (`cleaned_json_data/`) 
 
 Each file is a JSON array with one record per line. Each file maps to one database table.
 
@@ -143,7 +143,7 @@ Each file is a JSON array with one record per line. Each file maps to one databa
 
 Logs:
 - `docs/Exclusion_Log.csv`: every excluded, corrected or flagged record, with the reason and the raw line.
-- `docs/Exclusion_Summary.json`: the count for each reason.
+- `docs/Exclusion_Summary.json`: the count for each reason. this is asummary versionfor the Exclusion_Log.csv file
 
 ## 7. Why we stage to JSON before loading into the database
 

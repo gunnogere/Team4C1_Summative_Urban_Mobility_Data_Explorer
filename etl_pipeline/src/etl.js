@@ -22,18 +22,18 @@ import proj4 from 'proj4'; // for coordinate system transformations
 
 
 //declare constants to use acrross the entire ETL pipeline
-const here = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(here, '..');
-const RAW = path.join(ROOT, 'raw_data');
-const OUT = path.join(ROOT, 'cleaned_json_data');
-const DOCS = path.resolve(ROOT, '..', 'docs');
+const here = path.dirname(fileURLToPath(import.meta.url)); 
+const ROOT = path.resolve(here, '..'); 
+const RAW = path.join(ROOT, 'raw_data'); 
+const OUT = path.join(ROOT, 'cleaned_json_data'); 
+const DOCS = path.resolve(ROOT, '..', 'docs'); 
 const TRIP_FILE = path.join(RAW, 'yellow_tripdata_2019-01.csv'); //source file for trip data. the file is quite large and ehence excluded from commit (version control)
 const LOOKUP_FILE = path.join(RAW, 'taxi_zone_lookup.csv'); //this is the timezone look up file joined for better understanding of dthe code.
 
-//Variables to store .shp , .dbf, .prj files
-const SHP_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.shp'); 
-const DBF_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.dbf');
-const PRJ_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.prj');
+//Variables to store .shp , .dbf, .prj files 
+const SHP_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.shp');  
+const DBF_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.dbf'); 
+const PRJ_FILE = path.join(RAW, 'taxi_zones', 'taxi_zones.prj'); 
 
 // Reference month of the file; records outside it are temporal anomalies.
 // define the start and end of reference month
@@ -41,6 +41,7 @@ const MONTH_START = Date.UTC(2019, 0, 1); //
 const MONTH_END = Date.UTC(2019, 1, 1); 
 
 // limits and constraints for validating trip data
+// such as maximum distance, fare, total amount, duration, speed and number of passesngers 
 const LIMITS = {
   maxDistanceMi: 100,
   maxFare: 500,
@@ -60,6 +61,7 @@ const VENDORS = [
 ];
 
 // reference data for rate codes as from the analysis of the CSv file
+// each rate code corresponds to a specific type of fare calculation used in the trip data
 const RATE_CODES = [
   { rate_code_id: 1, description: 'Standard rate' },
   { rate_code_id: 2, description: 'JFK' },
@@ -80,7 +82,6 @@ const PAYMENT_TYPES = [
 ];
 
 // ---------- helper functions ----------
-
 // this method writes data into a the specified file
 class Writer {
   constructor(file) {
@@ -98,6 +99,7 @@ class Writer {
 //one record per lines avoids trying to overload memory by attempting to load the entire array ata once
 // this was optimsied after the ETL froze due to memory oveload 
 //this was recalled from the class meeting about time and memory complexities 
+//JsonArrayWriter is an inbuilt Node.js class that extends the Writer class to handle JSON array writing efficienlty
 
 class JsonArrayWriter extends Writer {
   constructor(file) {
@@ -121,7 +123,7 @@ class JsonArrayWriter extends Writer {
 
 // JsonArrayWriter function writes an array of JSON objectins into thespecified file one record at a time
 //this per line write is important as it prevent memory overload as mentioned above
-
+//  this fucntion is used across the ETL pipeline whenever JSON array writing is needed
 async function writeJson(name, data) {
   const w = new JsonArrayWriter(path.join(OUT, name));
   await w.open();
@@ -130,6 +132,9 @@ async function writeJson(name, data) {
   return data.length;
 }
 
+//helper fucntion for CSV cell escaping and rounding numbers 
+//it escapes the CSV cell by doubling any exsiting double quotes within the cell 
+//  the round fucntion rounds a number to the specified number of decima places 
 const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 const round = (v, d) => {
   const f = 10 ** d;
@@ -138,6 +143,9 @@ const round = (v, d) => {
 
 // Parses 'YYYY-MM-DD HH:MM:SS' strictly; returns epoch ms (treated as local wall-clock) or NaN.
 // data cleaning and parsing fucntion for timestamp and numeric values
+//toISOString is used to convert the local wall-clock time to a standardised ISO string 
+// TS_RE in this context is a custom REGEX pattern used to strictly match the 'YYYY-MM-DD HH:MM:SS' format for timestamps
+
 const TS_RE = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/;
 function parseTs(s) {
   const m = TS_RE.exec(s);
@@ -149,14 +157,16 @@ function parseTs(s) {
 }
 const isoLocal = (t) => new Date(t).toISOString().slice(0, 19);
 
-const num = (s) => (s === '' || s === undefined ? NaN : Number(s));
+const num = (s) => (s === '' || s === undefined ? NaN  : Number(s));
 const intOrNaN = (s) => {
   const n = num(s);
   return Number.isInteger(n) ? n : NaN;
 };
 
 // ---------- dimension: zone lookup ----------
-// loda timezone looks 
+// loda timezone lookup from the CSV file containing the zone information from the downloaded files
+// it reads the file and parses the data into an array of zone objects 
+
 function loadLookup() {
   const lines = fs.readFileSync(LOOKUP_FILE, 'utf8').split(/\r?\n/).filter(Boolean).slice(1);
   const zones = [];
@@ -178,20 +188,24 @@ function loadLookup() {
 
 // ---------- spatial metadata: taxi_zones shapefile -> WGS84 GeoJSON ----------
 // convert taxi_zone shapefile into geojson
-function ringStats(ring) {
-  let a = 0, cx = 0, cy = 0;
-  for (let i = 0; i < ring.length - 1; i++) {
-    const [x0, y0] = ring[i];
-    const [x1, y1] = ring[i + 1];
-    const cr = x0 * y1 - x1 * y0;
-    a += cr;
-    cx += (x0 + x1) * cr;
-    cy += (y0 + y1) * cr;
+// A custom utility funtion to calculate the area and centroid of a polygon ring
+function ringStats(ring){
+  let a=0;
+  let cx = 0;
+  let cy = 0;
+  for (let i=0; i<ring.length-1; i++){
+    const [x0,y0] =ring[i];
+    const [x1,y1] =ring[i+1];
+    const cr = x0*y1-x1*y0;
+    a+=cr;
+    cx+=(x0+x1)*cr;
+    cy+=(y0+y1)*cr;
   }
-  return { a: a / 2, cx, cy };
+  return {a:a/2,cx,cy};
 }
 
-// load geometrics from shapefile and convert to WGS84 GeoJson
+// load geometrics from shapefile and convert to WGS84 GeoJSON
+// this fuction loads the geomtrics from the shapefile and convert thwm to WGS84 GeoJSON
 async function loadGeometries() {
   const wkt = fs.readFileSync(PRJ_FILE, 'utf8');
   const toWgs = proj4(wkt, 'EPSG:4326');
@@ -215,8 +229,8 @@ async function loadGeometries() {
     byId.set(id, entry);
   }
 
-
   // convert the aggregated geometrics to GeoJSON featues
+  // this helps with converting the aggregated geomtrics into a GeoJSON format ready for use in mapping visialisations 
   const result = [];
   for (const [id, e] of [...byId].sort((x, y) => x[0] - y[0])) {
     const [lon, lat] = toWgs.forward([e.CX / e.A, e.CY / e.A]);
@@ -244,7 +258,7 @@ async function loadGeometries() {
 // cleanups are improtant and a baseline for data analysis
 //hnce this step in the ETL process is critical. 
 
-async function processTrips(zoneMap) {
+async function processTripData(zoneMapData) {
   const tripsOut = new JsonArrayWriter(path.join(OUT, 'trips.json'));
   await tripsOut.open();
   const log = new Writer(path.join(DOCS, 'Exclusion_Log.csv'));
@@ -294,7 +308,7 @@ async function processTrips(zoneMap) {
     // categorical validity
     if (!VENDORS.some((v) => v.vendor_id === vendor)) { await exclude('INVALID_VENDOR', `VendorID=${vendor}`); continue; }
     if (!PAYMENT_TYPES.some((p) => p.payment_type_id === pay)) { await exclude('INVALID_PAYMENT_TYPE', `payment_type=${pay}`); continue; }
-    if (!zoneMap.has(puLoc) || !zoneMap.has(doLoc)) { await exclude('INVALID_LOCATION_ID', `PU=${puLoc} DO=${doLoc}`); continue; }
+    if (!zoneMapData.has(puLoc) || !zoneMapData.has(doLoc)) { await exclude('INVALID_LOCATION_ID', `PU=${puLoc} DO=${doLoc}`); continue; }
 
     // optional charges: blank -> 0 (congestion_surcharge did not exist before Feb 2019)
     const opt = (s) => { const n = num(s); return Number.isNaN(n) ? 0 : n; };
@@ -365,38 +379,22 @@ async function processTrips(zoneMap) {
     const dow = pDate.getUTCDay(); // 0=Sunday
     const weekend = dow === 0 || dow === 6;
     const rush = !weekend && ((hour >= 7 && hour < 10) || (hour >= 16 && hour < 20));
-    const puBorough = zoneMap.get(puLoc).borough, doBorough = zoneMap.get(doLoc).borough;
+    const puBorough = zoneMapData.get(puLoc).borough, doBorough = zoneMapData.get(doLoc).borough;
 
     // from teh .csv analysis: these are the derived features we want to include in the output JSON file
     await tripsOut.push({
-      trip_id: rowNo,
-      vendor_id: vendor,
-      pickup_datetime: isoLocal(pickup),
-      dropoff_datetime: isoLocal(dropoff),
-      passenger_count: pax,
-      trip_distance_miles: round(dist, 2),
-      rate_code_id: rate,
-      store_and_fwd_flag: flag,
-      pu_location_id: puLoc,
-      do_location_id: doLoc,
-      payment_type_id: pay,
-      fare_amount: round(fare, 2),
-      extra: round(extra, 2),
-      mta_tax: round(mta, 2),
-      tip_amount: round(tip, 2),
-      tolls_amount: round(tolls, 2),
-      improvement_surcharge: round(imp, 2),
-      congestion_surcharge: round(cong, 2),
-      total_amount: round(total, 2),
-      trip_duration_min: round(durMin, 2),
-      avg_speed_mph: round(speed, 2),
-      fare_per_mile: round(fare / dist, 2),
-      tip_pct: pay === 1 && fare > 0 ? round((tip / fare) * 100, 2) : null,
-      pickup_hour: hour,
-      pickup_day_of_week: dow,
-      is_weekend: weekend,
-      is_rush_hour: rush,
-      is_cross_borough: puBorough !== doBorough,
+      trip_id: rowNo, vendor_id: vendor,
+      pickup_datetime: isoLocal(pickup), dropoff_datetime: isoLocal(dropoff),
+      passenger_count: pax, trip_distance_miles: round(dist, 2),
+      rate_code_id: rate, store_and_fwd_flag: flag, pu_location_id: puLoc,do_location_id: doLoc,
+      payment_type_id: pay,fare_amount: round(fare, 2),
+      extra: round(extra, 2),mta_tax: round(mta, 2),
+      tip_amount: round(tip, 2), tolls_amount: round(tolls, 2), improvement_surcharge: round(imp, 2),
+      congestion_surcharge: round(cong, 2), total_amount: round(total, 2),
+      trip_duration_min: round(durMin, 2), avg_speed_mph: round(speed, 2),
+      fare_per_mile: round(fare / dist, 2),pickup_day_of_week: dow, is_weekend: weekend,
+      tip_pct: pay === 1 && fare > 0 ? round((tip / fare) * 100, 2) : null, pickup_hour: hour,
+      is_rush_hour: rush, is_cross_borough: puBorough !== doBorough,
     });
     stats.rows_kept++;
   }
@@ -421,15 +419,17 @@ async function main() {
 
   console.log('Loading zone lookup and spatial metadata...');
   const zones = loadLookup();
-  const zoneMap = new Map(zones.map((z) => [z.location_id, z]));
+  const zoneMapData = new Map(zones.map((z) => [z.location_id, z]));
   const geoms = await loadGeometries();
-
   const geomIds = new Set(geoms.map((g) => g.location_id));
+
+  //create a summary of the spatial metadata for the ETL process
+  // this summary helps in understanding the completelness of the spatial metadata for the ETL process 
   const spatial = {
     lookup_zones: zones.length,
     zones_with_geometry: geoms.length,
     lookup_zones_without_geometry: zones.filter((z) => !geomIds.has(z.location_id)).map((z) => z.location_id),
-    geometry_ids_not_in_lookup: [...geomIds].filter((id) => !zoneMap.has(id)),
+    geometry_ids_not_in_lookup: [...geomIds].filter((id) => !zoneMapData.has(id)),
   };
 
   await writeJson('zones.json', zones); //  write zone lookups into its outpu file
@@ -438,12 +438,39 @@ async function main() {
   await writeJson('rate_codes.json', RATE_CODES); // write rate code lookups into their respective json file
   await writeJson('payment_types.json', PAYMENT_TYPES); // write payment type lookups into their respective jsn file
 
-  console.log('Processing trips...'); // write to terminal for UI feel 
 
+  // i added some messages for the user as they wait the trip data to be proceeded 
+  // this is simply a beautifier and not essential to the ETL pricess itself for data processing 
+  console.log('Processing trips from file;; hangtight this might take a minute...\n'); // write to terminal for UI feel 
+    
+    //fun facts about New York City Taxis
+    let funNYCFactsArray =[
+      'The iconic yellow taxis started operations as far back as the ealry 1900s.',
+      'The Iconic "Medallion" system was created during the Greate Depression in 1937 to limit the number of taxis on the Street',
+      'Taci driver must undergo a background check and complete specialied traiing, inclusing learning NYC geography, before getting licesnses.',
+      'Before electronic meters, NYC taxicab fars were claculated by distance counters mounted on the front wheels'
+    ]
+
+    //pick 2 random unique facts to show to the user on terminal
+    const shuffledFacts = [...funNYCFactsArray].sort(()=>0.5 -Math.random());
+    const selectedFacts = shuffledFacts.slice(0,2);
+
+    console.log('As you wait, here are two fun facts about NYC Taxis:');
+    selectedFacts.forEach((fact,index) =>{
+      console.log (` ${index+1}. Did you know? ${fact}`);
+    }
+    );
+    
+    // add spacing line before processing finishes
+  console.log('');
+  
   // i used awit to ensure that the trip processing completes before moving on to the next step
   // this (awaits) ensures clean error handling
-  const stats = await processTrips(zoneMap); 
+  const stats = await processTripData(zoneMapData); 
 
+  // create a summary object that will be written to the Exclusion_Summary.json file 
+  // this summary includes metadata about the ETL run as well as the processed statistics 
+  // it combines the current timestamps, source file information, ETL Limits and processes statisctcs 
   const summary = { generated_at: new Date().toISOString(), source: path.basename(TRIP_FILE), limits: LIMITS, spatial, ...stats };
   fs.writeFileSync(path.join(DOCS, 'Exclusion_Summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));
