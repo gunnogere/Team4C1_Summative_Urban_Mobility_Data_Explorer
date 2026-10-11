@@ -1,15 +1,16 @@
+// SUMMATIVE Project: Urban MObility cData Explorer for NYC Taxi Trip Data
 // this is the primary Node.js ETL script for the Urban Mobility Data explory project 
-//data was extracted from the SUmmative link https://alueducation.instructure.com/courses/3138/assignments/44952 for the NYC dataset
+// data was extracted from the SUmmative link https://alueducation.instructure.com/courses/3138/assignments/44952 for the NYC dataset
+
 
 //Author: Joshua Mulongo 
 //GitHUb Username: @gunnogere
 //GItHub Repo: Team4C1_Summative_Urban_Mobility_Data_Explorer
 
+
 //The goal of this script is to extract, transform, and load (stage) the NYC taxi trip data into a cleaned JSON data format 
 //from the JSON format, this data can then be easily loaded into a database  by the team mate handling  teh database tasks of the group assignement 
-
 //I chose to go with Node.js and not python because my familiarity with it but also because of its non-blocking input/output model which is important for handling large datasets more efficiently comapred to Python.
-
 
 //import modules needed for the ETL process
 import fs from 'node:fs'; // import the Node.js file system module to be used for writing and reading files
@@ -50,7 +51,7 @@ const LIMITS = {
   minDurationSec: 30,
   maxSpeedMph: 100,
   maxPassengers: 6,
-  totalToleranceUsd: 1,
+  totalToleranceUsd: 1, 
 };
 
 // reference data for vendors, rates codes and payment types as from anaylsis of .CSV file
@@ -338,9 +339,7 @@ async function processTripData(zoneMapData) {
     if (seen.has(key)) { await exclude('DUPLICATE', 'exact duplicate of an earlier record'); continue; }
     seen.add(key);
 
-    // correctable fields: set to null instead of dropping the trip
-    // correctble fields are those thatr can be fixed or  set to a default value instead of dropping the entore trip row
-    // examples include invalid passenger count as a it wpuld not be a trip at all if there was no passender (null or zero)
+    // correctable fields: these are fields that can be se to null instead of dropping the entire trip row
     let pax = intOrNaN(paxS);
     if (Number.isNaN(pax) || pax < 1 || pax > LIMITS.maxPassengers) {
       events.push(['CORRECTED', 'PASSENGER_COUNT_INVALID', `passenger_count='${paxS}' set to NULL`]);
@@ -357,8 +356,7 @@ async function processTripData(zoneMapData) {
       flag = null;
     }
 
-    // suspicious but kept
-    // these are records we suspsect might have issues but are not outrightly invalid
+    //  these are record classfied as suspicipous but not outrightly removed
     const computed = fare + extra + mta + tip + tolls + imp + cong;
     if (Math.abs(computed - total) > LIMITS.totalToleranceUsd) {
       events.push(['FLAGGED', 'TOTAL_MISMATCH', `sum of components=${round(computed, 2)} total_amount=${total}`]);
@@ -384,17 +382,26 @@ async function processTripData(zoneMapData) {
     // from teh .csv analysis: these are the derived features we want to include in the output JSON file
     await tripsOut.push({
       trip_id: rowNo, vendor_id: vendor,
-      pickup_datetime: isoLocal(pickup), dropoff_datetime: isoLocal(dropoff),
+      pickup_datetime: isoLocal(pickup), 
+      dropoff_datetime: isoLocal(dropoff),
       passenger_count: pax, trip_distance_miles: round(dist, 2),
-      rate_code_id: rate, store_and_fwd_flag: flag, pu_location_id: puLoc,do_location_id: doLoc,
+      rate_code_id: rate, store_and_fwd_flag: flag, 
+      pu_location_id: puLoc,do_location_id: doLoc,
       payment_type_id: pay,fare_amount: round(fare, 2),
       extra: round(extra, 2),mta_tax: round(mta, 2),
-      tip_amount: round(tip, 2), tolls_amount: round(tolls, 2), improvement_surcharge: round(imp, 2),
-      congestion_surcharge: round(cong, 2), total_amount: round(total, 2),
-      trip_duration_min: round(durMin, 2), avg_speed_mph: round(speed, 2),
-      fare_per_mile: round(fare / dist, 2),pickup_day_of_week: dow, is_weekend: weekend,
-      tip_pct: pay === 1 && fare > 0 ? round((tip / fare) * 100, 2) : null, pickup_hour: hour,
-      is_rush_hour: rush, is_cross_borough: puBorough !== doBorough,
+      tip_amount: round(tip, 2), tolls_amount: round(tolls, 2), 
+      improvement_surcharge: round(imp, 2),
+      congestion_surcharge: round(cong, 2), 
+      total_amount: round(total, 2),
+      trip_duration_min: round(durMin, 2), 
+      avg_speed_mph: round(speed, 2),
+      fare_per_mile: round(fare / dist, 2),
+      pickup_day_of_week: dow, 
+      is_weekend: weekend,
+      tip_pct: pay === 1 && fare > 0 ? round((tip / fare) * 100, 2) : null, 
+      pickup_hour: hour,
+      is_rush_hour: rush, 
+      is_cross_borough: puBorough !== doBorough,
     });
     stats.rows_kept++;
   }
@@ -404,14 +411,7 @@ async function processTripData(zoneMapData) {
   return stats;
 }
 
-// ---------- main ----------
-
-// purpose: the function is the 'big boy' that orchestrated the entire ETL process for the trip data
-// it uses the custom fucntions codes above  and loads the ETL pipeline for processing the tip data
-// it also genearates summary stattistics ad wrotes them into the exclusion summary json file
-// 
-
-
+// the main funtion for prchestraing the rntire ETL process
 async function main() {
   fs.mkdirSync(OUT, { recursive: true }); 
   fs.mkdirSync(DOCS, { recursive: true });
@@ -423,8 +423,7 @@ async function main() {
   const geoms = await loadGeometries();
   const geomIds = new Set(geoms.map((g) => g.location_id));
 
-  //create a summary of the spatial metadata for the ETL process
-  // this summary helps in understanding the completelness of the spatial metadata for the ETL process 
+// create a summary of the spatial data
   const spatial = {
     lookup_zones: zones.length,
     zones_with_geometry: geoms.length,
@@ -432,15 +431,13 @@ async function main() {
     geometry_ids_not_in_lookup: [...geomIds].filter((id) => !zoneMapData.has(id)),
   };
 
-  await writeJson('zones.json', zones); //  write zone lookups into its outpu file
-  await writeJson('zone_geometries.json', geoms); // write zone geometrics into its outpu file
-  await writeJson('vendors.json', VENDORS); // write vendor lookups into their json file
-  await writeJson('rate_codes.json', RATE_CODES); // write rate code lookups into their respective json file
-  await writeJson('payment_types.json', PAYMENT_TYPES); // write payment type lookups into their respective jsn file
+  await writeJson('zones.json', zones);  
+  await writeJson('zone_geometries.json', geoms); 
+  await writeJson('vendors.json', VENDORS);  
+  await writeJson('rate_codes.json', RATE_CODES); 
+  await writeJson('payment_types.json', PAYMENT_TYPES); 
 
-
-  // i added some messages for the user as they wait the trip data to be proceeded 
-  // this is simply a beautifier and not essential to the ETL pricess itself for data processing 
+  // i added this section of funfacts as a way to keep the user enegaged as the ETL pipeline runs 
   console.log('Processing trips from file;; hangtight this might take a minute...\n'); // write to terminal for UI feel 
     
     //fun facts about New York City Taxis
@@ -461,16 +458,14 @@ async function main() {
     }
     );
     
-    // add spacing line before processing finishes
+  // add spacing line before processing finishes
   console.log('');
   
-  // i used awit to ensure that the trip processing completes before moving on to the next step
-  // this (awaits) ensures clean error handling
+  // I used awit to ensure that the trip processing completes before moving on to the next step
   const stats = await processTripData(zoneMapData); 
 
-  // create a summary object that will be written to the Exclusion_Summary.json file 
-  // this summary includes metadata about the ETL run as well as the processed statistics 
-  // it combines the current timestamps, source file information, ETL Limits and processes statisctcs 
+// write the summary of the ETL process to a JSON file and also log it to the terminal 
+//this gives visual to the user running the code about the ETL Process
   const summary = { generated_at: new Date().toISOString(), source: path.basename(TRIP_FILE), limits: LIMITS, spatial, ...stats };
   fs.writeFileSync(path.join(DOCS, 'Exclusion_Summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));
@@ -478,7 +473,6 @@ async function main() {
 }
 
 
-// the is the entry point for the ETL process 
-// it calls the main fucntion and handles any uncaught errors by logging them and exiting the process
-// this ensures that unhandles errrors are propely loggd and  the process exits gracefully 
+
+// this is the entry point for the ETL process 
 main().catch((e) => { console.error(e); process.exit(1); });
