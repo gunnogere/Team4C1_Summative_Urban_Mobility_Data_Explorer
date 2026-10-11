@@ -18,7 +18,6 @@ This folder cleans the raw NYC Yellow Taxi data and saves it as JSON files, one 
 
 Install Node.js from https://nodejs.org if `node -v` fails.
 
-No `.env` file or environment variables are needed. The pipeline only reads local files.
 
 ## 2. Get the project and the raw data
 
