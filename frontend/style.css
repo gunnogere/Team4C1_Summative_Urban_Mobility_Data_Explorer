@@ -138,3 +138,27 @@ button:hover {
     font-size: 2rem;
     color: var(--taxi);
 }
+
+/* charts: three boxes that wrap on small screens */
+#charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+#charts h2 {
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+    color: var(--muted);
+}
+
+.chart-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 16px;
+}
+
+.chart-box h3 {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+}
