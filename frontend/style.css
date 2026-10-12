@@ -162,3 +162,20 @@ button:hover {
     font-size: 0.95rem;
     margin-bottom: 12px;
 }
+
+/* map: needs a fixed height or leaflet shows nothing */
+#map-section {
+    margin-top: 24px;
+}
+
+#map-section h2 {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+#map {
+    height: 450px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+}
