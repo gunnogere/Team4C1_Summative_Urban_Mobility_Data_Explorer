@@ -2,13 +2,39 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <!-- makes the page to fit on phone screen-->
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>NYC Urban Mobility Explorer</title>
     </head>
     <body>
+        <!-- the title -->
         <header>
             <h1>NYC Urban Mobility Explorer</h1>
             <p>How New Yorkers move by taxi</p>
         </header>
+        <main>
+            <!-- filter panel-->
+            <section id="filters">
+                <h2>Filters</h2>
+
+                <!-- date range -->
+                 <label for="date-from">From date</label>
+                 <input type="date" id="date-from">
+
+                 <label for="date-to">To date</label>
+                 <input type="date" id="date-to">
+
+                 <!--location: filter by the borough where the trip started-->
+                 <label for="borough">Pickup borough</label>
+                 <select id="borough">
+                    <option value="">All</option>
+                    <option value="Manhattan">Manhattan</option>
+                    <option value="Brooklyn">Brooklyn</option>
+                    <option value="Queens">Queens</option>
+                    <option value="Bronx">Bronx</option>
+                    <option value="Staten Island">Staten Island</option>
+                 </select>            
+            </section>
+        </main>
     </body>
 </html>
