@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS urban_mobility;
 USE urban_mobility;
 
-Dimension table (sources: etl_pipeline/cleaned_json_data)
+-- Dimension table (sources: etl_pipeline/cleaned_json_data)
 
 -- 1. Zones table
 CREATE TABLE zones (
@@ -49,7 +49,7 @@ CREATE TABLE trips (
     passenger_count      TINYINT UNSIGNED NULL,
     trip_distance_miles  DECIMAL(6,2) NOT NULL,
     rate_code_id         INT NULL,
-    store_and_fwd_flag   CHAR(1) NUL,
+    store_and_fwd_flag   CHAR(1) NULL,
     pu_location_id       INT NOT NULL,
     do_location_id       INT NOT NULL,
     Payment_type_id      INT NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE trips (
     pickup_hour            TINYINT UNSIGNED NOT NULL,
     is_rush_hour           BOOLEAN NOT NULL,
     is_cross_borough       BOOLEAN NOT NULL,
-    CONSTRAINT chk_store_fwd CHECK (store_and_fwd_flag IN ('Y', 'N'))
+    CONSTRAINT chk_store_fwd CHECK (store_and_fwd_flag IN ('Y', 'N')),
     FOREIGN KEY (vendor_id)         REFERENCES
     vendors(vendor_id),
     FOREIGN KEY (rate_code_id)      REFERENCES
