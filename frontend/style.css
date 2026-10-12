@@ -1,0 +1,29 @@
+/* my color pelette: night city with a taxi-yellow
+:root {
+    --night: #14181f;
+    --panel: #1d232d;
+    --line: #2c3442;
+    --text: #e8e4d8;
+    --muted: #9aa3b2;
+    --taxi: #f2b705;
+}
+
+/* count padding inside box widths so nothing overflows */
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: "Barlow", sans-serif;
+    background: var(--night);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+/* headings look like street signs */
+h1, h2, h3 {
+    font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0;
+}
