@@ -179,3 +179,65 @@ button:hover {
     background: var(--panel);
     border: 1px solid var(--line);
 }
+
+/* trips table: yellow header row, thin lines between rows */
+#table-section {
+    margin-top: 24px;
+    overflow-x: auto;
+}
+
+#table-section h2 {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+}
+
+th,
+td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+}
+
+th {
+    font-family: "Barlow Condensed", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--taxi);
+    cursor: pointer;
+}
+
+/* small screens: tighter spacing, one chart per row */
+@media (max-width: 600px) {
+    main {
+        padding: 12px;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    #charts {
+        grid-template-columns: 1fr;
+    }
+
+    #map {
+        height: 300px;
+    }
+
+    .card p {
+        font-size: 1.6rem;
+    }
+
+    th,
+    td {
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+}
