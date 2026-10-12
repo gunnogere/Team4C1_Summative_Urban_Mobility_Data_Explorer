@@ -2,7 +2,7 @@
 
 ## 1. What I Did
 
-I reviewed the cleaned JSON files and created a `schema.sql` file to organize the data into tables for zones, zone geometries, vendors, payment types, and rate codes.
+I reviewed the cleaned JSON files and created a `schema.sql` file to organize the data into tables for zones, zone geometries, vendors, trips, payment types, and rate codes.
 
 ## 2. Tools Used
 
