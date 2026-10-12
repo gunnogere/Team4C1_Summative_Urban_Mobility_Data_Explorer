@@ -89,3 +89,25 @@ input:focus,
 select:focus {
     outline: 2px solid var(--taxi);
 }
+
+/* buttons: Apply is the main action, Reset is quieter */
+button {
+    padding: 9px 14px;
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px solid var(--taxi);
+    background: transparent;
+    color: var(--taxi);
+}
+
+#apply-btn {
+    background: var(--taxi);
+    color: var(--night);
+}
+
+button:hover {
+    opacity: 0.85;
+}
