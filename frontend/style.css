@@ -27,3 +27,65 @@ h1, h2, h3 {
     letter-spacing: 0.04em;
     margin: 0;
 }
+
+/* top bar: taxi-yellow line like a meter strip */
+header {
+    padding: 28px 24px 20px;
+    border-bottom: 3px solid var(--taxi);
+}
+
+header h1 {
+    font-size: 2.4rem;
+    color: var(--taxi);
+}
+
+header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+}
+
+/* keep the page content from stretching too wide */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* filter panel: controls laid out in a flexible grid */
+#filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    align-items: end;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 20px;
+}
+
+#filters h2 {
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+    color: var(--muted);
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--night);
+    color: var(--text);
+    border: 1px solid var(--line);
+    font-family: inherit;
+}
+
+input:focus,
+select:focus {
+    outline: 2px solid var(--taxi);
+}
