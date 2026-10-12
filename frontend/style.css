@@ -111,3 +111,30 @@ button {
 button:hover {
     opacity: 0.85;
 }
+
+/* summary cards: numbers look like a taxi meter */
+#summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--taxi);
+    padding: 16px 20px;
+}
+
+.card h3 {
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+
+.card p {
+    margin: 6px 0 0;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 2rem;
+    color: var(--taxi);
+}
