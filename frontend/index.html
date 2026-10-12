@@ -33,7 +33,26 @@
                     <option value="Queens">Queens</option>
                     <option value="Bronx">Bronx</option>
                     <option value="Staten Island">Staten Island</option>
-                 </select>            
+                 </select>  
+
+                 <!-- fare range dollars -->
+                  <label for="min-fare">Min fare ($)</label>
+                  <input type="number" id="min-fare" min="0">
+                  
+                  <label for="max-fare">Max fare ($)</label>
+                  <input type="number" id="max-fare" min="0">
+
+                 <!-- distance range in miles -->
+                 <label for="min-distance">Min distance (miles)</label>
+                <input type="number" id="min-distance" min="0">
+
+                <label for="max-distance">Max distance (miles)</label>
+                <input type="number" id="max-distance" min="0">
+
+                <!-- apply sends the choices to the page, reset clears them -->
+                <button id="apply-btn">Apply</button>
+                <button id="reset-btn">Reset</button>
+
             </section>
         </main>
     </body>
