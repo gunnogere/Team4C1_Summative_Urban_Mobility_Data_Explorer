@@ -89,6 +89,31 @@
                     <canvas id="fare-chart"></canvas>
                   </div>
             </section>
+
+            <!-- table of individual trips, headers will be used for sorting -->
+            <section id="table-section">
+                <h2>Trips</h2>
+                <table id="trips-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="pickup_datetime">Pickup time</th>
+                            <th data-sort="pu_zone">Pickup zone</th>
+                            <th data-sort="do_zone">Dropoff zone</th>
+                            <th data-sort="trip_distance_miles">Distance (mi)</th>
+                            <th data-sort="trip_duration_min">Duration (min)</th>
+                            <th data-sort="fare_amount">Fare ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trips-body">
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- map of the taxi zones -->
+            <section id="map-section">
+                <h2>Taxi zones map</h2>
+                <div id="map"></div>
+            </section>
         </main>
     </body>
 </html>
