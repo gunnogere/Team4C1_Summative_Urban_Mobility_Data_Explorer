@@ -14,16 +14,23 @@ async function init() {
     const response = await fetch(DATA_URL);
     allTrips = await response.json();
     shownTrips = allTrips;
-    renderSummary(allTrips);
-    renderTable(allTrips);
-    renderHourChart(allTrips);
-    renderSpeedChart(allTrips);
+    renderAll(allTrips);
     setupSorting();
     document.getElementById("apply-btn").addEventListener("click", applyFilters);
     document.getElementById("reset-btn").addEventListener("click", resetFilters);
     document.getElementById("close-detail").addEventListener("click", function () {
         document.getElementById("trip-detail").close();
     });
+}
+
+// draws the cards, the table and all four charts for a list of trips
+function renderAll(trips) {
+    renderSummary(trips);
+    renderTable(trips);
+    renderHourChart(trips);
+    renderSpeedChart(trips);
+    renderFareChart(trips);
+    renderZonesChart(trips);
 }
 
 // average of one column, 0 if there are no trips
@@ -133,6 +140,38 @@ function speedByHour(trips) {
     });
 }
 
+// average fare per mile for each pickup borough
+function farePerMileByBorough(trips) {
+    const fares = {};
+    const miles = {};
+    for (const trip of trips) {
+        const borough = trip.pu_borough;
+        fares[borough] = (fares[borough] || 0) + trip.fare_amount;
+        miles[borough] = (miles[borough] || 0) + trip.trip_distance_miles;
+    }
+    const names = Object.keys(fares);
+    const values = names.map(function (name) {
+        return Math.round((fares[name] / miles[name]) * 100) / 100;
+    });
+    return { names: names, values: values };
+}
+
+// the five pickup zones with the most trips
+function topPickupZones(trips) {
+    const counts = {};
+    for (const trip of trips) {
+        counts[trip.pu_zone] = (counts[trip.pu_zone] || 0) + 1;
+    }
+    const sorted = Object.keys(counts).sort(function (a, b) {
+        return counts[b] - counts[a];
+    });
+    const top = sorted.slice(0, 5);
+    return {
+        names: top,
+        values: top.map(function (name) { return counts[name]; })
+    };
+}
+
 // bar chart: how many trips in each hour
 function renderHourChart(trips) {
     drawChart("hour-chart", {
@@ -168,6 +207,49 @@ function renderSpeedChart(trips) {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// bar chart: dollars per mile in each borough
+function renderFareChart(trips) {
+    const result = farePerMileByBorough(trips);
+    drawChart("fare-chart", {
+        type: "bar",
+        data: {
+            labels: result.names,
+            datasets: [{
+                label: "Fare per mile ($)",
+                data: result.values,
+                backgroundColor: "#16535a"
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+// horizontal bars: the busiest places to be picked up
+function renderZonesChart(trips) {
+    const result = topPickupZones(trips);
+    drawChart("zones-chart", {
+        type: "bar",
+        data: {
+            labels: result.names,
+            datasets: [{
+                label: "Trips",
+                data: result.values,
+                backgroundColor: "#d4452a"
+            }]
+        },
+        options: {
+            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } }
@@ -294,10 +376,7 @@ function applyFilters() {
     });
 
     shownTrips = filtered;
-    renderSummary(filtered);
-    renderTable(filtered);
-    renderHourChart(filtered);
-    renderSpeedChart(filtered);
+    renderAll(filtered);
 }
 
 // clears every filter box and shows all the trips again
