@@ -1,7 +1,14 @@
 const path = require('path')
+
+// Use dotenv
+require('dotenv').config({path: 'config.env'})
+
 const express = require('express')
 const app = express()
 const PORT = process.env.PORT || 3000
+
+// Connect the Database
+const database = require('./models/database')
 
 // Use Express Middleware
 app.use(express.json())
@@ -15,17 +22,30 @@ app.use(bodyParser.json())
 const cors = require('cors')
 app.use(cors())
 
-// Use dotenv
-require('dotenv').config({path: 'config.env'})
+// app.listen(PORT, () => {
+//     console.log(`Server is running on PORT ${PORT}`)
+// })
 
-// Connect the Database
-const database = require('./models/database')
+const startServer = async() => {
+    try {
+        await database.execute('SELECT 1')
+        console.log("MYSQL Database is Connected Successfully!")
 
+        const server = app.listen(PORT, () => {
+            console.log(`Server is running on PORT ${PORT}`)
+        })
 
+        server.on('error', async(error) => {
+            console.error('Server Failed!', error)
+            await database.end()
+            process.exitCode = 1
+        })
 
+    } catch (error) {
+        console.log('Failed To Start the Backend!', error)
+        await database.end()
+        process.exitCode = 1
+    }
+}
 
-
-
-app.listen(PORT, () => {
-    console.log(`Server is running on PORT ${PORT}`)
-})
+startServer()
