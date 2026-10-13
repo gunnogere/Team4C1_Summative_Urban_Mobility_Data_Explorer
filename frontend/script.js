@@ -262,7 +262,12 @@ let map;
 
 // draws the base map of New York with street tiles
 function renderMap() {
-    map = L.map("map").setView([40.72, -73.93], 11);
+    // the map can't be dragged or zoomed out beyond the New York area
+    map = L.map("map", {
+        minZoom: 10,
+        maxBounds: [[40.45, -74.35], [40.98, -73.60]],
+        maxBoundsViscosity: 1.0
+    }).setView([40.72, -73.93], 11);
 
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
@@ -272,14 +277,29 @@ function renderMap() {
 
 // draws every taxi zone on the map as a coloured shape
 async function renderZones() {
-    const response = await fetch("zone_geometries.json");
-    const zones = await response.json();
+    const geoResponse = await fetch("zone_geometries.json");
+    const zones = await geoResponse.json();
+
+    // the zone names live in another file, so we load that one too
+    const nameResponse = await fetch("zones.json");
+    const names = await nameResponse.json();
+
+    // so we can find a zone's name by its id
+    const nameById = {};
+    for (const n of names) {
+        nameById[n.location_id] = n;
+    }
 
     // Leaflet wants "features", so we wrap each zone in that shape
     const features = zones.map(function (zone) {
+        const info = nameById[zone.location_id] || {};
         return {
             type: "Feature",
-            properties: { location_id: zone.location_id },
+            properties: {
+                location_id: zone.location_id,
+                name: info.zone || info.service_zone || "Zone " + zone.location_id,
+                borough: info.borough || ""
+            },
             geometry: zone.geometry
         };
     });
@@ -290,6 +310,12 @@ async function renderZones() {
             weight: 1,
             fillColor: "#5ea597",
             fillOpacity: 0.5
+        },
+        // show the zone name when the mouse is over it
+        onEachFeature: function (feature, layer) {
+            const p = feature.properties;
+            const label = p.borough ? p.name + " (" + p.borough + ")" : p.name;
+            layer.bindTooltip(label, { sticky: true });
         }
     }).addTo(map);
 }
