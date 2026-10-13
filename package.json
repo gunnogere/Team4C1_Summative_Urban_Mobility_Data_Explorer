@@ -1,0 +1,28 @@
+{
+  "name": "team4c1_summative_urban_mobility_data_explorer",
+  "version": "1.0.0",
+  "description": "This is the working draft README for the Team4C1 Urban Mobility Data Explorer project. It will be updated as the codebase and documentation evolve throughout the project.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gunnogere/Team4C1_Summative_Urban_Mobility_Data_Explorer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gunnogere/Team4C1_Summative_Urban_Mobility_Data_Explorer/issues"
+  },
+  "homepage": "https://github.com/gunnogere/Team4C1_Summative_Urban_Mobility_Data_Explorer#readme",
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "mysql2": "^3.24.5"
+  }
+}
