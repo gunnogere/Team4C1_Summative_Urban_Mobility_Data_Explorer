@@ -304,7 +304,7 @@ async function renderZones() {
         };
     });
 
-    L.geoJSON(features, {
+    const zoneLayer = L.geoJSON(features, {
         style: {
             color: "#16535a",
             weight: 1,
@@ -318,6 +318,24 @@ async function renderZones() {
             layer.bindTooltip(label, { sticky: true });
         }
     }).addTo(map);
+
+    const bounds = zoneLayer.getBounds();
+
+    // fit the whole city into the map
+    map.fitBounds(bounds, { padding: [10, 10] });
+
+    // dashed outline drawn around the whole city
+    L.rectangle(bounds.pad(0.03), {
+        color: "#d4452a",
+        weight: 2,
+        dashArray: "8 6",
+        fill: false,
+        interactive: false
+    }).addTo(map);
+
+    // people can move and zoom out a little, but not leave the city
+    map.setMinZoom(map.getBoundsZoom(bounds) - 1);
+    map.setMaxBounds(bounds.pad(0.4));
 }
 
 // the column the table is sorted by, and the direction
@@ -415,3 +433,18 @@ function resetFilters() {
 }
 
 init();
+
+// three-bar menu: open and close it, and close it after a link is picked
+const menuBtn = document.getElementById("menu-btn");
+const menuBox = document.getElementById("menu");
+menuBtn.addEventListener("click", function () {
+    const opening = menuBox.hidden;
+    menuBox.hidden = !opening;
+    menuBtn.setAttribute("aria-expanded", String(opening));
+});
+menuBox.addEventListener("click", function (event) {
+    if (event.target.tagName === "A") {
+        menuBox.hidden = true;
+        menuBtn.setAttribute("aria-expanded", "false");
+    }
+});

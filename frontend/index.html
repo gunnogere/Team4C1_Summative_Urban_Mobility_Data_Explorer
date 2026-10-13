@@ -11,12 +11,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500&family=Public+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
     <!-- top strip with the title -->
     <header class="top">
+        <button id="menu-btn" aria-label="Open menu" aria-expanded="false">&#9776;</button>
+        <nav id="menu" hidden>
+            <a href="#summary">Summary</a>
+            <a href="#filters">Filters</a>
+            <a href="#charts">Charts</a>
+            <a href="#map-section">Map</a>
+            <a href="#table-section">Trips table</a>
+        </nav>
         <h1>NYC Urban Mobility Explorer</h1>
         <p>Patterns in New York City yellow taxi trips</p>
     </header>
@@ -141,6 +149,6 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
 </body>
 </html>

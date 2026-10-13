@@ -292,3 +292,83 @@ footer {
         height: 320px;
     }
 }
+/* phone fix: let every block shrink to the screen so nothing scrolls sideways */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+.layout > *, #charts > *, #summary > * {
+    min-width: 0;
+}
+.chart-wrap {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+}
+canvas {
+    max-width: 100%;
+}
+.table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+}
+@media (max-width: 700px) {
+    #charts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+/* three-bar menu: a button that stays on screen and opens a list of links */
+html {
+    scroll-behavior: smooth;
+}
+#menu-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 3000;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--rush);
+    border-radius: 6px;
+    background: var(--teal);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+}
+#menu {
+    position: fixed;
+    top: 64px;
+    right: 12px;
+    z-index: 3000;
+    min-width: 180px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--rush);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+#menu[hidden] {
+    display: none;
+}
+#menu a {
+    display: block;
+    padding: 12px 16px;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+}
+#menu a:last-child {
+    border-bottom: none;
+}
+#menu a:hover {
+    background: var(--paper);
+}
+
+/* no coloured line under the header */
+.top {
+    border-bottom: none;
+}
