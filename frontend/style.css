@@ -1,226 +1,287 @@
-/* my color palette: night city with a taxi-yellow */
+
+/* colours of the whole site, change them here and the page changes */
 :root {
-    --night: #14181f;
-    --panel: #1d232d;
-    --line: #2c3442;
-    --text: #e8e4d8;
-    --muted: #9aa3b2;
-    --taxi: #f2b705;
+    --paper: #f3eddf;
+    --card: #fbf8ef;
+    --line: #cfc7b3;
+    --ink: #16353b;
+    --muted: #4a6166;
+    --teal: #16535a;
+    --rush: #d4452a;
 }
 
-/* count padding inside box widths so nothing overflows */
 * {
     box-sizing: border-box;
 }
+
 body {
     margin: 0;
-    font-family: "Barlow", sans-serif;
-    background: var(--night);
-    color: var(--text);
-    line-height: 1.5;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", sans-serif;
 }
 
-/* headings look like street signs */
-h1, h2, h3 {
-    font-family: "Barlow Condensed", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+/* teal strip at the top with an orange-red line under it */
+.top {
+    padding: 18px 32px;
+    background: var(--teal);
+    border-bottom: 4px solid var(--rush);
+    color: var(--paper);
+}
+
+.top h1 {
     margin: 0;
+    font-family: "Fraunces", serif;
+    font-size: 28px;
+    font-weight: 500;
 }
 
-/* top bar: taxi-yellow line like a meter strip */
-header {
-    padding: 28px 24px 20px;
-    border-bottom: 3px solid var(--taxi);
-}
-
-header h1 {
-    font-size: 2.4rem;
-    color: var(--taxi);
-}
-
-header p {
+.top p {
     margin: 4px 0 0;
-    color: var(--muted);
+    font-size: 14px;
+    color: #cfe3dc;
 }
 
-/* keep the page content from stretching too wide */
-main {
+/* keeps the content centred and not too wide on big screens */
+.page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 24px 32px 48px;
 }
 
-/* filter panel: controls laid out in a flexible grid */
-#filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 16px;
-    align-items: end;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 20px;
+h2 {
+    font-family: "Fraunces", serif;
+    font-weight: 500;
+    font-size: 20px;
 }
 
-#filters h2 {
-    grid-column: 1 / -1;
-    font-size: 1.1rem;
-    color: var(--muted);
-}
-
-label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-}
-
-input,
-select {
-    width: 100%;
-    padding: 8px 10px;
-    background: var(--night);
-    color: var(--text);
-    border: 1px solid var(--line);
-    font-family: inherit;
-}
-
-input:focus,
-select:focus {
-    outline: 2px solid var(--taxi);
-}
-
-/* buttons: Apply is the main action, Reset is quieter */
-button {
-    padding: 9px 14px;
-    font-family: "Barlow Condensed", sans-serif;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    border: 1px solid var(--taxi);
-    background: transparent;
-    color: var(--taxi);
-}
-
-#apply-btn {
-    background: var(--taxi);
-    color: var(--night);
-}
-
-button:hover {
-    opacity: 0.85;
-}
-
-/* summary cards: numbers look like a taxi meter */
+/* the cards sit in one row and wrap on smaller screens */
 #summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin: 24px 0;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
+/* each card has a teal line on top like a small tab */
 .card {
-    background: var(--panel);
+    padding: 12px 14px;
+    background: var(--card);
     border: 1px solid var(--line);
-    border-left: 4px solid var(--taxi);
-    padding: 16px 20px;
+    border-top: 3px solid var(--teal);
+    border-radius: 4px;
 }
 
 .card h3 {
-    font-size: 0.95rem;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 400;
     color: var(--muted);
 }
 
+/* numbers use the mono font so they look like a meter */
 .card p {
     margin: 6px 0 0;
     font-family: "IBM Plex Mono", monospace;
-    font-size: 2rem;
-    color: var(--taxi);
+    font-size: 22px;
 }
 
-/* charts: three boxes that wrap on small screens */
+/* filters on the left (260px) and charts taking the rest */
+.layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+#filters {
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+}
+
+#filters h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+#filters label {
+    display: block;
+    margin: 12px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#filters input,
+#filters select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+/* min and max boxes sit next to each other */
+.pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* apply is filled orange-red, reset is only an outline */
+#filters button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 9px;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#apply-btn {
+    background: var(--rush);
+    border: 1px solid var(--rush);
+    color: #ffffff;
+}
+
+#reset-btn {
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+}
+
+/* the four charts in a 2 by 2 grid */
 #charts {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
 
-#charts h2 {
-    grid-column: 1 / -1;
-    font-size: 1.1rem;
-    color: var(--muted);
-}
-
 .chart-box {
-    background: var(--panel);
+    padding: 12px 14px;
+    background: var(--card);
     border: 1px solid var(--line);
-    padding: 16px;
+    border-radius: 4px;
 }
 
 .chart-box h3 {
-    font-size: 0.95rem;
-    margin-bottom: 12px;
+    margin: 0 0 8px;
+    font-family: "Fraunces", serif;
+    font-size: 15px;
+    font-weight: 500;
 }
 
-/* map: needs a fixed height or leaflet shows nothing */
-#map-section {
-    margin-top: 24px;
+/* fixed height so Chart.js knows how big to draw */
+.chart-wrap {
+    position: relative;
+    height: 220px;
 }
 
-#map-section h2 {
-    font-size: 1.1rem;
-    color: var(--muted);
-    margin-bottom: 8px;
+/* map and table sections */
+#map-section,
+#table-section {
+    margin-top: 28px;
 }
 
 #map {
     height: 450px;
-    background: var(--panel);
     border: 1px solid var(--line);
+    border-radius: 4px;
 }
 
-/* trips table: yellow header row, thin lines between rows */
-#table-section {
-    margin-top: 24px;
+/* lets the table scroll sideways on small screens */
+.table-wrap {
     overflow-x: auto;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
 }
 
-#table-section h2 {
-    font-size: 1.1rem;
-    color: var(--muted);
-    margin-bottom: 8px;
-}
-
-table {
+#trips-table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--panel);
+    font-size: 14px;
 }
 
-th,
-td {
+#trips-table th,
+#trips-table td {
     padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid var(--line);
 }
 
-th {
-    font-family: "Barlow Condensed", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--taxi);
+/* header cells are clickable for sorting */
+#trips-table th {
+    background: var(--teal);
+    color: var(--paper);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#trips-table th:hover {
+    background: #1d6b73;
+}
+
+#trips-body tr {
     cursor: pointer;
 }
 
-/* small screens: tighter spacing, one chart per row */
+#trips-body tr:hover {
+    background: #efe7d2;
+}
+
+/* the pop-up with the trip details */
+#trip-detail {
+    width: 90%;
+    max-width: 420px;
+    padding: 20px;
+    background: var(--card);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+}
+
+#trip-detail button {
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: var(--rush);
+    border: 0;
+    border-radius: 3px;
+    color: #ffffff;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+footer {
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+}
+
+/* tablets: filters go on top of the charts */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* phones: one chart per row and smaller padding */
 @media (max-width: 600px) {
-    main {
-        padding: 12px;
+    .page {
+        padding: 16px;
     }
 
-    header h1 {
-        font-size: 1.8rem;
+    .top {
+        padding: 14px 16px;
     }
 
     #charts {
@@ -228,16 +289,6 @@ th {
     }
 
     #map {
-        height: 300px;
-    }
-
-    .card p {
-        font-size: 1.6rem;
-    }
-
-    th,
-    td {
-        padding: 6px 8px;
-        font-size: 0.85rem;
+        height: 320px;
     }
 }
