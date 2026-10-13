@@ -22,6 +22,13 @@ app.use(bodyParser.json())
 const cors = require('cors')
 app.use(cors())
 
+// Use the routes
+const tripsRouter = require('./routers/trips-router')
+const zonesRouter = require('./routers/zones-router')
+
+app.use('/api/trips', tripsRouter)
+app.use('/api/zones', zonesRouter)
+
 // app.listen(PORT, () => {
 //     console.log(`Server is running on PORT ${PORT}`)
 // })
