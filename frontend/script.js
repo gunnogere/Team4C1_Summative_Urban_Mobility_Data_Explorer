@@ -21,6 +21,9 @@ async function init() {
     setupSorting();
     document.getElementById("apply-btn").addEventListener("click", applyFilters);
     document.getElementById("reset-btn").addEventListener("click", resetFilters);
+    document.getElementById("close-detail").addEventListener("click", function () {
+        document.getElementById("trip-detail").close();
+    });
 }
 
 // average of one column, 0 if there are no trips
@@ -53,7 +56,7 @@ function renderSummary(trips) {
     document.getElementById("cross-borough").textContent = crossBorough.length;
 }
 
-// draws one table row for every trip
+// draws one table row for every trip, clicking a row opens its details
 function renderTable(trips) {
     const body = document.getElementById("trips-body");
     body.innerHTML = "";
@@ -67,8 +70,26 @@ function renderTable(trips) {
             "<td>" + trip.trip_distance_miles + "</td>" +
             "<td>" + trip.trip_duration_min + "</td>" +
             "<td>" + trip.fare_amount.toFixed(2) + "</td>";
+        row.addEventListener("click", function () {
+            showTripDetails(trip);
+        });
         body.appendChild(row);
     }
+}
+
+// opens the pop-up with all the details of one trip
+function showTripDetails(trip) {
+    const content = document.getElementById("detail-content");
+    content.innerHTML =
+        "<p><strong>Pickup:</strong> " + trip.pickup_datetime + "</p>" +
+        "<p><strong>From:</strong> " + trip.pu_zone + " (" + trip.pu_borough + ")</p>" +
+        "<p><strong>To:</strong> " + trip.do_zone + " (" + trip.do_borough + ")</p>" +
+        "<p><strong>Distance:</strong> " + trip.trip_distance_miles + " miles</p>" +
+        "<p><strong>Duration:</strong> " + trip.trip_duration_min + " minutes</p>" +
+        "<p><strong>Average speed:</strong> " + trip.avg_speed_mph + " mph</p>" +
+        "<p><strong>Fare:</strong> $" + trip.fare_amount.toFixed(2) + "</p>";
+
+    document.getElementById("trip-detail").showModal();
 }
 
 // keeps each chart so we can remove the old one before drawing a new one
