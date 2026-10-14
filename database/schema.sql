@@ -8,7 +8,7 @@ CREATE TABLE zones (
     location_id INT PRIMARY KEY,
     borough VARCHAR(100) NULL,
     zone VARCHAR(150) NULL,
-    service_done VARCHAR(150) NULL
+    service_zone VARCHAR(150) NULL
 );
 
 -- 2. Zone geometries.json (260 of 265 zones have geometry)
