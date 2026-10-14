@@ -32,7 +32,7 @@ router.route('/').get(async(req, res) => {
     try {
         const [trips] = await database.query(`
             SELECT t.trips_id AS trip_id, t.pickup_datetime, t.dropoff_datetime, t.pu_location_id, 
-            t.do_location_id, pu_zone AS pu_zone, pu.borough AS pu_zone, dz.zone AS do_zone, dz.borough AS do_borough,
+            t.do_location_id, pu.zone AS pu_zone, pu.borough AS pu_borough, dz.zone AS do_zone, dz.borough AS do_borough,
             t.trip_distance_miles, t.trip_duration_min, t.fare_amount, t.total_amount, t.avg_speed_mph, t.fare_per_mile
             FROM trips t 
             JOIN zones pu ON pu.location_id = t.pu_location_id 
