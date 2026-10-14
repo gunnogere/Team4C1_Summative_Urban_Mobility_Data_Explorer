@@ -3,9 +3,13 @@ import os
 from pathlib import Path
 
 import mysql.connector
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "etl_pipeline" / "cleaned_json_data"
+
+# Read credentials used by the Node.js backend
+load_dotenv(BASE_DIR / "backend" / "config.env")
 
 def read_json(filename):
     with open(DATA_DIR / filename, "r", encoding="utf-8") as file:
@@ -14,10 +18,11 @@ def read_json(filename):
 
 def main():
         connection = mysql.connector.connect(
-                host="localhost",
-                user=os.getenv("DB_USER", "mobility_user"),
-                password=os.getenv("DB_PASSWORD"),
-                database="urban_mobility"
+                host=os.getenv("DB_HOST", "localhost"),
+                port=int(os.getenv("DB_PORT", "3306")),
+                user=os.environ["DB_USER"],
+                password=os.environ["DB_PASSWORD"],
+                database=os.getenv("DB_NAME", "urban_mobility")
                 )
         
         cursor = connection.cursor()
