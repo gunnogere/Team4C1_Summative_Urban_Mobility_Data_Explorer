@@ -20,7 +20,7 @@ router.route('/geojson').get(async(req, res) => {
             type: 'Feature',
             id: zone.location_id,
             properties: {
-                location_id: zone.location_id,
+                location_id: zone.location_id, 
                 borough: zone.borough,
                 zone: zone.zone
             },

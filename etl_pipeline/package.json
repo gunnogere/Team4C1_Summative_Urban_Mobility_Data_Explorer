@@ -8,9 +8,7 @@
   },
   "dependencies": {
     "proj4": "^2.22.0", 
-    "shapefile": "^0.6.6"
+    "shapefile": "^0.6.6",
+    "mysql2" : "^3.11.0"
   }
 }
-
-
-

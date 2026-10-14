@@ -212,3 +212,111 @@ etl_pipeline/
 ```
 
 Duplicate detection uses a hash of each raw line, so a collision is theoretically possible but extremely unlikely.
+
+## 10. Load the data into MySQL
+
+The full flow is: **run the ETL** (sections 3-4), **set up MySQL**, **load the JSON into MySQL**.
+Run every command below from inside `etl_pipeline/`.
+
+### Before you start
+
+- The ETL must have finished. Check that `cleaned_json_data/` has 6 `.json` files (section 4).
+- You need a Linux or macOS terminal and a user that can run `sudo` (Linux). On macOS you need [Homebrew](https://brew.sh).
+- Free disk space: about 15 GB more (the database is larger than the JSON files).
+
+### Step 1: install MySQL and create the database
+
+```bash
+npm run setup-db
+```
+
+This runs `setup_db.sh`. It asks you questions and you answer in the terminal. Press **Enter** to accept the value in `[brackets]`.
+
+| The script asks | What to answer |
+|---|---|
+| Install MySQL server now? | `y` if MySQL is not installed. It will ask for your `sudo` password. |
+| MySQL host / port | Press Enter (`localhost` / `3306`). |
+| Admin username / password | Only asked if `sudo mysql` does not work. On a fresh Ubuntu install you will not be asked. |
+| Application DB user to create | Press Enter to use `urban_app`. |
+| Password for the user | Type a password of your choice (it stays hidden), then type it again to confirm. |
+| Database already exists. Drop and recreate it? | `n` to keep your data, `y` to start clean. **`y` deletes all existing data.** |
+
+What it does for you:
+1. Installs MySQL if needed (apt, dnf, yum, pacman or brew) and starts the service.
+2. Creates the `urban_mobility` database and all 6 tables from `../database/schema.sql`.
+3. Creates the user and gives it access to that database only.
+4. Saves the login details to `etl_pipeline/.env`. This file is private (it is in `.gitignore`), so never commit or share it.
+
+At the end you should see a list of tables: `payment_types`, `rate_codes`, `trips`, `vendors`, `zone_geometries`, `zones`.
+
+### Step 2: load the JSON files into MySQL
+
+```bash
+npm run load
+```
+
+This runs `src/load_db.js`. It asks:
+
+| The script asks | What to answer |
+|---|---|
+| Host, Port, User, Database | Press Enter. The values come from `.env`. |
+| Password | Press Enter to use the saved one, or type it. |
+| Tables to load | Press Enter for `all`. |
+| Load ... into ...? | `y` |
+
+While it runs you will see a live row count, for example `trips: 2,500,000 rows`.
+Loading about 7.59 million trips takes several minutes, so wait for it to finish.
+Do not press Ctrl+C: a table that is cut off is rolled back and you have to load it again.
+
+At the end it checks the data. Every line should end with `OK`:
+
+```
+  zones            json=       265  db=       265  OK
+  trips            json=   7,590,347  db=   7,590,347  OK
+  orphan trips (no pickup zone): 0
+```
+
+### Step 3: check the data yourself
+
+```bash
+mysql -u urban_app -p urban_mobility
+```
+
+Enter your password, then try:
+
+```sql
+SELECT COUNT(*) FROM trips;
+SELECT borough, COUNT(*) AS trips FROM trips t JOIN zones z ON z.location_id = t.pu_location_id GROUP BY borough;
+SELECT pickup_hour, AVG(avg_speed_mph) FROM trips GROUP BY pickup_hour ORDER BY pickup_hour;
+```
+
+Type `exit` to leave.
+
+### Loading again
+
+Run `npm run load` again. If the tables already hold data, the script asks **"Truncate all tables and reload?"**.
+Answer `y` to empty them and reload, or `n` to stop without changing anything.
+
+If you re-run the ETL (for example after changing a cleaning rule), run `npm run load` again to refresh the database.
+
+### Order of commands (summary)
+
+```bash
+npm install        # once
+npm run etl        # clean the raw data into cleaned_json_data/
+npm run setup-db   # once: install MySQL, create the database, tables and user
+npm run load       # load the JSON files into MySQL
+```
+
+### Database problems
+
+| Problem | Fix |
+|---|---|
+| `Cannot connect: ... ECONNREFUSED` | MySQL is not running. Run `sudo systemctl start mysql` (Linux) or `brew services start mysql` (macOS). |
+| `Access denied for user` | Wrong password. Run `npm run setup-db` again and choose a new one (answer `y` to recreate). |
+| `Missing trips.json. Run "npm run etl" first.` | The ETL has not been run yet. See section 4. |
+| `Cannot find package 'mysql2'` | Run `npm install`. |
+| `Permission denied: ./setup_db.sh` | Run `chmod +x setup_db.sh`, or use `npm run setup-db`. |
+| `Failed loading trips: ... max_allowed_packet` | Run `sudo mysql -e "SET GLOBAL max_allowed_packet=268435456"` then `npm run load` again. |
+| `ENOSPC` or `disk full` | Free up disk space, then run `npm run load` and answer `y` to truncate. |
+| Zone names look wrong (`zone` is empty) | The JSON was made before the zone parsing fix. Run `npm run etl`, then `npm run load`. |

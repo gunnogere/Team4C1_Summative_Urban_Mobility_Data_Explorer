@@ -2,11 +2,9 @@
 // this is the primary Node.js ETL script for the Urban Mobility Data explory project 
 // data was extracted from the SUmmative link https://alueducation.instructure.com/courses/3138/assignments/44952 for the NYC dataset
 
-
 //Author: Joshua Mulongo 
 //GitHUb Username: @gunnogere
 //GItHub Repo: Team4C1_Summative_Urban_Mobility_Data_Explorer
-
 
 //The goal of this script is to extract, transform, and load (stage) the NYC taxi trip data into a cleaned JSON data format 
 //from the JSON format, this data can then be easily loaded into a database  by the team mate handling  teh database tasks of the group assignement 
@@ -20,7 +18,6 @@ import crypto from 'node:crypto'; // for cryptopgrahic operations suc as hasing
 import { fileURLToPath } from 'node:url'; // convert file URLs to a file path
 import * as shapefile from 'shapefile'; //shapefile module for reading shapefiles in the NYC provided datasets
 import proj4 from 'proj4'; // for coordinate system transformations 
-
 
 //declare constants to use acrross the entire ETL pipeline
 const here = path.dirname(fileURLToPath(import.meta.url)); 
