@@ -3,7 +3,7 @@ const database = require('../models/database')
 
 router.route('/').get(async(req, res) => {
     try {
-        const vendors = database.execute(`SELECT vendor_id, vendors_name FROM vendors ORDER BY vendor_id`)
+        const [vendors] = await database.execute(`SELECT vendor_id, vendor_name FROM vendors ORDER BY vendor_id`)
         return res.status(200).json({message: "Vendors are Retrieved!", vendors})
 
     } catch (error) {

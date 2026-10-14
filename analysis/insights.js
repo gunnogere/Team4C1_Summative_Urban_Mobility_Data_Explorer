@@ -20,8 +20,6 @@ let airport = 0, cross = 0;
 const byHour = Array.from({ length: 24 }, () => ({ n: 0, speed: 0 }));
 const byBorough = {};
 const pickupZones = {};
-const sample = [];
-const SAMPLE_EVERY = 760; // keeps about 10,000 trips for the dashboard
 
 const rl = readline.createInterface({ input: fs.createReadStream(DATA + "trips.json") });
 
@@ -50,19 +48,6 @@ rl.on("line", (line) => {
     byBorough[pu.borough].fpm += t.fare_per_mile;
   }
   pickupZones[pu.zone] = (pickupZones[pu.zone] || 0) + 1;
-
-  if (total % SAMPLE_EVERY === 0) {
-    sample.push({
-      pickup_datetime: t.pickup_datetime,
-      pu_zone: pu.zone, pu_borough: pu.borough,
-      do_zone: dof.zone, do_borough: dof.borough,
-      trip_distance_miles: t.trip_distance_miles,
-      trip_duration_min: t.trip_duration_min,
-      fare_amount: t.fare_amount,
-      avg_speed_mph: t.avg_speed_mph,
-      pickup_hour: t.pickup_hour
-    });
-  }
 });
 
 rl.on("close", () => {
@@ -87,7 +72,5 @@ rl.on("close", () => {
       .map(([zone, trips]) => ({ zone, trips }))
   };
   fs.writeFileSync("analysis/insights.json", JSON.stringify(result, null, 2));
-  fs.writeFileSync("frontend/real-trips-sample.json", JSON.stringify(sample));
   console.log(JSON.stringify(result, null, 2));
-  console.log("sample trips for the dashboard:", sample.length);
 });

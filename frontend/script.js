@@ -1,23 +1,13 @@
-// where the trips come from, later this changes to Josue's API
-// where the backend API lives, and how many pages of 200 trips to load from it
+// where the backend API lives
 const API_URL = "http://localhost:3000/api";
-const API_PAGES = 5;
-// if the API is not running, these files are tried in this order
-const FALLBACK_FILES = ["real-trips-sample.json", "sample-trips.json"];
+// how many trips the table shows at once (the API allows at most 200)
+const TABLE_LIMIT = 200;
 
-// all the trips we loaded
-let allTrips = [];
-
-// the trips that are shown right now (after filters)
-let shownTrips = [];
-
-// loads the trips and fills the page
+// loads the data from the API and fills the page
 async function init() {
     renderMap();
     renderZones();
-    allTrips = await loadTrips();
-    shownTrips = allTrips;
-    renderAll(allTrips);
+    await refresh();
     setupSorting();
     document.getElementById("apply-btn").addEventListener("click", applyFilters);
     document.getElementById("reset-btn").addEventListener("click", resetFilters);
@@ -26,44 +16,70 @@ async function init() {
     });
 }
 
-// draws the cards, the table and all four charts for a list of trips
-function renderAll(trips) {
-    renderSummary(trips);
-    renderTable(trips);
-    renderHourChart(trips);
-    renderSpeedChart(trips);
-    renderFareChart(trips);
-    renderZonesChart(trips);
+// asks the API for one endpoint and returns its JSON
+async function getJson(path) {
+    const response = await fetch(API_URL + path);
+    if (!response.ok) {
+        throw new Error("the API answered " + response.status + " for " + path);
+    }
+    return response.json();
 }
 
-// average of one column, 0 if there are no trips
-function average(trips, field) {
-    if (trips.length === 0) {
-        return 0;
+// reads the filter boxes into a query string for the API
+function filterQuery() {
+    const fields = {
+        date_from: "date-from",
+        date_to: "date-to",
+        borough: "borough",
+        min_fare: "min-fare",
+        max_fare: "max-fare",
+        min_distance: "min-distance",
+        max_distance: "max-distance"
+    };
+    const params = new URLSearchParams();
+    for (const name of Object.keys(fields)) {
+        const value = document.getElementById(fields[name]).value;
+        if (value !== "") {
+            params.set(name, value);
+        }
     }
-    let sum = 0;
-    for (const trip of trips) {
-        sum += trip[field];
+    return params;
+}
+
+// gets the insights and the trips for the current filters and redraws the page
+async function refresh() {
+    const params = filterQuery();
+    const tripParams = new URLSearchParams(params);
+    tripParams.set("limit", TABLE_LIMIT);
+    tripParams.set("sort", sortField);
+    tripParams.set("order", sortAscending ? "ASC" : "DESC");
+
+    try {
+        const [insights, trips] = await Promise.all([
+            getJson("/insights?" + params),
+            getJson("/trips?" + tripParams)
+        ]);
+        renderSummary(insights.summary);
+        renderTable(trips.trips.map(normalizeTrip));
+        renderHourChart(insights.trips_by_hour);
+        renderSpeedChart(insights.speed_by_hour);
+        renderFareChart(insights.fare_by_borough);
+        renderZonesChart(insights.top_pickup_zones);
+    } catch (error) {
+        console.error(error);
+        alert("Could not load data from the API. Is the backend running?");
     }
-    return sum / trips.length;
 }
 
 // fills the seven cards at the top
-function renderSummary(trips) {
-    const airportTrips = trips.filter(function (trip) {
-        return trip.pu_zone.includes("Airport") || trip.do_zone.includes("Airport");
-    });
-    const crossBorough = trips.filter(function (trip) {
-        return trip.pu_borough !== trip.do_borough;
-    });
-
-    document.getElementById("total-trips").textContent = trips.length.toLocaleString();
-    document.getElementById("avg-fare").textContent = "$" + average(trips, "fare_amount").toFixed(2);
-    document.getElementById("avg-distance").textContent = average(trips, "trip_distance_miles").toFixed(1) + " mi";
-    document.getElementById("avg-duration").textContent = Math.round(average(trips, "trip_duration_min")) + " min";
-    document.getElementById("avg-speed").textContent = average(trips, "avg_speed_mph").toFixed(1) + " mph";
-    document.getElementById("airport-trips").textContent = airportTrips.length;
-    document.getElementById("cross-borough").textContent = crossBorough.length;
+function renderSummary(summary) {
+    document.getElementById("total-trips").textContent = summary.total_trips.toLocaleString();
+    document.getElementById("avg-fare").textContent = "$" + Number(summary.avg_fare || 0).toFixed(2);
+    document.getElementById("avg-distance").textContent = Number(summary.avg_distance || 0).toFixed(1) + " mi";
+    document.getElementById("avg-duration").textContent = Math.round(summary.avg_duration || 0) + " min";
+    document.getElementById("avg-speed").textContent = Number(summary.avg_speed || 0).toFixed(1) + " mph";
+    document.getElementById("airport-trips").textContent = summary.airport_trips.toLocaleString();
+    document.getElementById("cross-borough").textContent = summary.cross_borough.toLocaleString();
 }
 
 // draws one table row for every trip, clicking a row opens its details
@@ -118,72 +134,24 @@ for (let hour = 0; hour < 24; hour++) {
     hourLabels.push(String(hour).padStart(2, "0") + ":00");
 }
 
-// counts the trips that started in each hour of the day
-function tripsByHour(trips) {
-    const counts = new Array(24).fill(0);
-    for (const trip of trips) {
-        counts[trip.pickup_hour] += 1;
+// puts the API's per-hour rows into 24 slots, 0 for hours without trips
+function byHour(rows, field) {
+    const values = new Array(24).fill(0);
+    for (const row of rows) {
+        values[row.pickup_hour] = row[field];
     }
-    return counts;
-}
-
-// average speed for each hour, 0 when there are no trips in that hour
-function speedByHour(trips) {
-    const sums = new Array(24).fill(0);
-    const counts = new Array(24).fill(0);
-    for (const trip of trips) {
-        sums[trip.pickup_hour] += trip.avg_speed_mph;
-        counts[trip.pickup_hour] += 1;
-    }
-    return sums.map(function (sum, hour) {
-        if (counts[hour] === 0) {
-            return 0;
-        }
-        return Math.round((sum / counts[hour]) * 10) / 10;
-    });
-}
-
-// average fare per mile for each pickup borough
-function farePerMileByBorough(trips) {
-    const fares = {};
-    const miles = {};
-    for (const trip of trips) {
-        const borough = trip.pu_borough;
-        fares[borough] = (fares[borough] || 0) + trip.fare_amount;
-        miles[borough] = (miles[borough] || 0) + trip.trip_distance_miles;
-    }
-    const names = Object.keys(fares);
-    const values = names.map(function (name) {
-        return Math.round((fares[name] / miles[name]) * 100) / 100;
-    });
-    return { names: names, values: values };
-}
-
-// the five pickup zones with the most trips
-function topPickupZones(trips) {
-    const counts = {};
-    for (const trip of trips) {
-        counts[trip.pu_zone] = (counts[trip.pu_zone] || 0) + 1;
-    }
-    const sorted = Object.keys(counts).sort(function (a, b) {
-        return counts[b] - counts[a];
-    });
-    const top = sorted.slice(0, 5);
-    return {
-        names: top,
-        values: top.map(function (name) { return counts[name]; })
-    };
+    return values;
 }
 
 // bar chart: how many trips in each hour
-function renderHourChart(trips) {
+function renderHourChart(rows) {
     drawChart("hour-chart", {
         type: "bar",
         data: {
             labels: hourLabels,
             datasets: [{
                 label: "Trips",
-                data: tripsByHour(trips),
+                data: byHour(rows, "trip_count"),
                 backgroundColor: "#5ea597"
             }]
         },
@@ -196,14 +164,14 @@ function renderHourChart(trips) {
 }
 
 // line chart: how fast the taxis go in each hour
-function renderSpeedChart(trips) {
+function renderSpeedChart(rows) {
     drawChart("speed-chart", {
         type: "line",
         data: {
             labels: hourLabels,
             datasets: [{
                 label: "Average speed (mph)",
-                data: speedByHour(trips),
+                data: byHour(rows, "avg_speed_mph"),
                 borderColor: "#d4452a",
                 backgroundColor: "#d4452a",
                 tension: 0.3
@@ -218,15 +186,14 @@ function renderSpeedChart(trips) {
 }
 
 // bar chart: dollars per mile in each borough
-function renderFareChart(trips) {
-    const result = farePerMileByBorough(trips);
+function renderFareChart(rows) {
     drawChart("fare-chart", {
         type: "bar",
         data: {
-            labels: result.names,
+            labels: rows.map(function (row) { return row.borough; }),
             datasets: [{
                 label: "Fare per mile ($)",
-                data: result.values,
+                data: rows.map(function (row) { return row.avg_fare_per_mile; }),
                 backgroundColor: "#16535a"
             }]
         },
@@ -239,15 +206,14 @@ function renderFareChart(trips) {
 }
 
 // horizontal bars: the busiest places to be picked up
-function renderZonesChart(trips) {
-    const result = topPickupZones(trips);
+function renderZonesChart(rows) {
     drawChart("zones-chart", {
         type: "bar",
         data: {
-            labels: result.names,
+            labels: rows.map(function (row) { return row.zone; }),
             datasets: [{
                 label: "Trips",
-                data: result.values,
+                data: rows.map(function (row) { return row.trip_count; }),
                 backgroundColor: "#d4452a"
             }]
         },
@@ -280,32 +246,25 @@ function renderMap() {
 
 // draws every taxi zone on the map as a coloured shape
 async function renderZones() {
-    const geoResponse = await fetch("zone_geometries.json");
-    const zones = await geoResponse.json();
-
-    // the zone names live in another file, so we load that one too
-    const nameResponse = await fetch("zones.json");
-    const names = await nameResponse.json();
-
-    // so we can find a zone's name by its id
-    const nameById = {};
-    for (const n of names) {
-        nameById[n.location_id] = n;
+    let features;
+    try {
+        const geojson = await getJson("/zones/geojson");
+        features = geojson.features.map(function (feature) {
+            const p = feature.properties;
+            return {
+                type: "Feature",
+                properties: {
+                    location_id: p.location_id,
+                    name: p.zone || "Zone " + p.location_id,
+                    borough: p.borough || ""
+                },
+                geometry: feature.geometry
+            };
+        });
+    } catch (error) {
+        console.error(error);
+        return;
     }
-
-    // Leaflet wants "features", so we wrap each zone in that shape
-    const features = zones.map(function (zone) {
-        const info = nameById[zone.location_id] || {};
-        return {
-            type: "Feature",
-            properties: {
-                location_id: zone.location_id,
-                name: info.zone || info.service_zone || "Zone " + zone.location_id,
-                borough: info.borough || ""
-            },
-            geometry: zone.geometry
-        };
-    });
 
     const zoneLayer = L.geoJSON(features, {
         style: {
@@ -345,8 +304,8 @@ async function renderZones() {
 let sortField = "pickup_datetime";
 let sortAscending = true;
 
-// sorts the shown trips by one column and redraws the table
-function sortTable(field) {
+// sorts the table by one column (the API does the sorting)
+async function sortTable(field) {
     // clicking the same column again flips the direction
     if (sortField === field) {
         sortAscending = !sortAscending;
@@ -355,17 +314,7 @@ function sortTable(field) {
         sortAscending = true;
     }
 
-    shownTrips.sort(function (a, b) {
-        let result;
-        if (typeof a[field] === "number") {
-            result = a[field] - b[field];
-        } else {
-            result = String(a[field]).localeCompare(String(b[field]));
-        }
-        return sortAscending ? result : -result;
-    });
-
-    renderTable(shownTrips);
+    await refresh();
 }
 
 // makes every table heading clickable
@@ -378,15 +327,10 @@ function setupSorting() {
     });
 }
 
-// reads the filter boxes and shows only the trips that match
+// reads the filter boxes and asks the API for the matching data
 function applyFilters() {
     const dateFrom = document.getElementById("date-from").value;
     const dateTo = document.getElementById("date-to").value;
-    const borough = document.getElementById("borough").value;
-    const minFare = document.getElementById("min-fare").value;
-    const maxFare = document.getElementById("max-fare").value;
-    const minDistance = document.getElementById("min-distance").value;
-    const maxDistance = document.getElementById("max-distance").value;
 
     // the From date must not be after the To date
     if (dateFrom && dateTo && dateFrom > dateTo) {
@@ -394,36 +338,7 @@ function applyFilters() {
         return;
     }
 
-    const filtered = allTrips.filter(function (trip) {
-        // the first 10 characters of the time are the day, like 2025-01-15
-        const day = trip.pickup_datetime.slice(0, 10);
-
-        if (dateFrom && day < dateFrom) {
-            return false;
-        }
-        if (dateTo && day > dateTo) {
-            return false;
-        }
-        if (borough && trip.pu_borough !== borough) {
-            return false;
-        }
-        if (minFare !== "" && trip.fare_amount < Number(minFare)) {
-            return false;
-        }
-        if (maxFare !== "" && trip.fare_amount > Number(maxFare)) {
-            return false;
-        }
-        if (minDistance !== "" && trip.trip_distance_miles < Number(minDistance)) {
-            return false;
-        }
-        if (maxDistance !== "" && trip.trip_distance_miles > Number(maxDistance)) {
-            return false;
-        }
-        return true;
-    });
-
-    shownTrips = filtered;
-    renderAll(filtered);
+    refresh();
 }
 
 // clears every filter box and shows all the trips again
@@ -467,40 +382,3 @@ function normalizeTrip(trip) {
     return trip;
 }
 
-// gets the trips: first from the backend API, and if it is not running, from a file
-async function loadTrips() {
-    try {
-        const trips = [];
-        for (let page = 1; page <= API_PAGES; page++) {
-            const response = await fetch(API_URL + "/trips?limit=200&page=" + page);
-            if (!response.ok) {
-                throw new Error("the API answered " + response.status);
-            }
-            const data = await response.json();
-            trips.push(...data.trips);
-            if (page >= data.pagination.total_pages) {
-                break;
-            }
-        }
-        if (trips.length > 0) {
-            console.log("Loaded " + trips.length + " trips from the API");
-            return trips.map(normalizeTrip);
-        }
-    } catch (error) {
-        console.log("API not available, using a file instead:", error.message);
-    }
-
-    for (const file of FALLBACK_FILES) {
-        try {
-            const response = await fetch(file);
-            if (response.ok) {
-                const trips = await response.json();
-                console.log("Loaded " + trips.length + " trips from " + file);
-                return trips.map(normalizeTrip);
-            }
-        } catch (error) {
-            // that file is missing, so try the next one
-        }
-    }
-    return [];
-}

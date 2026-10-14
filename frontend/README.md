@@ -35,21 +35,20 @@ index.html - the page structure.
 style.css - the look and the phone layout. 
 script.js - loads the data, and handles filters, sorting and the menu.
 
-zone_geometries.json - the shapes of the taxi zones, used to draw the map.
-zones.json - zone names and boroughs, used for the map tooltips.
-sample-trips.json - 8 made up trios used only to test the layout (not real data)
+zone_geometries.json - the shapes of the taxi zones (no longer loaded; the map uses /api/zones/geojson).
+zones.json - zone names and boroughs (no longer loaded).
 
 ## Where the data comes from 
 
 The data flows like this: raw NYC taxi files go through our ETL pipeline into MySQL, then the Express Backend API serves it, and this dashboard reads it.
 
-The dashoard reads trips from the DATA_URl line at the top of script.js. That line points to sample-trips.json while testing, and to the backend API (http://localhost:3000/api/trips) when the backend is running.
+The dashboard reads everything from the backend API at the API_URL line at the top of script.js (http://localhost:3000/api). The backend must be running; there is no file fallback. Filters and table sorting are done by the API.
 
 Backend endpoints used:
 
-- Get /api/trips - trips, with page, limit, sort and filter options 
-- Get /api/zones - the taxi zones 
--Get /api/insight - summary numbers and chart data
+- GET /api/trips - the table, with limit, sort, order and filter options
+- GET /api/zones/geojson - the zone shapes and names for the map
+- GET /api/insights - summary cards and chart data, with the same filters
 
 ## Team 
  Frontend: Didier Abizera ( Team4 C1)
