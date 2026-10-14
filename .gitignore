@@ -7,5 +7,5 @@ venv/
 # Environment variables
 .env
 # Generated output exceeds 100MB
-etl_pipeline/cleaned_json_data/trips.json
-.vscode/
+#etl_pipeline/cleaned_json_data/trips.json
+.vscode/etl_pipeline/cleaned_json_data/trips.json
