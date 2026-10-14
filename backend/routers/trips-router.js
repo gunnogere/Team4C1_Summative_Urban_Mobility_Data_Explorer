@@ -3,9 +3,9 @@ const database = require('../models/database')
 
 router.route('/').get(async(req, res) => {
     const page = Number(req.query.page) || 1
-    const limit = NUmber(req.query.limit) || 50
+    const limit = Number(req.query.limit) || 50
 
-    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limmit > 200) {
+    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 200) {
         return res.status(400).json({message: "Invalid page or limit! Limit must be between 1 and 200."})
     }
 

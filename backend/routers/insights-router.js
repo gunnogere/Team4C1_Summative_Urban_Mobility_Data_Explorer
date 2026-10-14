@@ -5,13 +5,13 @@ router.route('/').get(async(req, res) => {
     try {
         // The summary cards on our frontend HTML page
         const [summary] = await database.execute(`SELECT COUNT(*) As total_trips, ROUND(AVG(t.fare_amount), 2) AS avg_fares, 
-            ROUND(AVG(t.avg_speed_mph), 2) AS avg_speed FROM trips t JOIN zones pu ON pu.location_id = t.pu_location_id $(req.filterSQL)`, 
+            ROUND(AVG(t.avg_speed_mph), 2) AS avg_speed FROM trips t JOIN zones pu ON pu.location_id = t.pu_location_id ${req.filterSQL}`, 
             req.filterValues)
         
         // Trips and the average speed by pickup hour!
         const [hourly] = await database.execute(`SELECT t.pickup_hour, COUNT(*) AS trip_count, ROUND(AVG(t.avg_speed_mph), 2) AS avg_speed_mph
             FROM trips t JOIN zones pu ON pu.location_id = t.pu_location_id
-            ${req.filterSQL} GROUP BY t.pickyp_hour ORDER BY t.pickup_hour`, req.filterValues)
+            ${req.filterSQL} GROUP BY t.pickup_hour ORDER BY t.pickup_hour`, req.filterValues)
         
         
         const [boroughs] = await database.execute(`SELECT pu.borough, COUNT(*) AS trip_count, ROUND(AVG(t.fare_per_mile), 2) AS avg_fare_per_mile
