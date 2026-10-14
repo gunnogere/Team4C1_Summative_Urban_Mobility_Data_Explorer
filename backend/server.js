@@ -85,11 +85,12 @@ app.use(['/api/trips', '/api/insights'], (req, res, next) => {
 const tripsRouter = require('./routers/trips-router')
 const zonesRouter = require('./routers/zones-router')
 const insightsRouter = require('./routers/insights-router')
+const vendorsRouter = require('./routers/vendors-router')
 
 app.use('/api/trips', tripsRouter)
 app.use('/api/zones', zonesRouter)
 app.use('/api/insights', insightsRouter)
-
+app.use('/api/vendors', vendorsRouter)
 
 // Just in case we have an unknown API
 app.use('/api', (req, res) => {
