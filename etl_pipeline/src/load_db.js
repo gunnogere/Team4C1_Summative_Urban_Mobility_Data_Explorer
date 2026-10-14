@@ -8,7 +8,9 @@ import mysql from 'mysql2/promise';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
 const DATA = path.join(ROOT, 'cleaned_json_data');
-const ENV_FILE = path.join(ROOT, '.env');
+// setup_db.sh writes the shared project credentials to the repository root.
+const ENV_FILE = [path.join(ROOT, '.env'), path.resolve(ROOT, '..', '.env')]
+  .find((file) => fs.existsSync(file)) ?? path.join(ROOT, '.env');
 const BATCH = 5000;
 
 // ---------- terminal helpers ----------
@@ -200,4 +202,3 @@ main().catch((e) => {
   console.error(`\n${e.message}`);
   process.exit(1);
 });
-

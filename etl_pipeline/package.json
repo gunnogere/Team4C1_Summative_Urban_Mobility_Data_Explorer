@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "etl": "node --max-old-space-size=4096 src/etl.js"
+    "etl": "node --max-old-space-size=4096 src/etl.js",
+    "setup-db": "./setup_db.sh",
+    "load": "node src/load_db.js"
   },
   "dependencies": {
-    "proj4": "^2.22.0", 
+    "proj4": "^2.22.0",
     "shapefile": "^0.6.6",
-    "mysql2" : "^3.11.0"
+    "mysql2": "^3.11.0"
   }
 }

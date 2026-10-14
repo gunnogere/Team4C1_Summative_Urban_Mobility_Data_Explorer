@@ -169,7 +169,7 @@ function loadLookup() {
   const lines = fs.readFileSync(LOOKUP_FILE, 'utf8').split(/\r?\n/).filter(Boolean).slice(1);
   const zones = [];
   for (const line of lines) {
-    const cells = [...line.matchAll(/"((?:[^"]|"")*)"|([^,]*)(?:,|$)/g)]
+    const cells = [...line.matchAll(/"((?:[^"]|"")*)"(?:,|$)|([^,]*)(?:,|$)/g)]
       .slice(0, 4)
       .map((m) => (m[1] !== undefined ? m[1].replace(/""/g, '"') : m[2]).trim());
     const [id, borough, zone, service] = cells;
