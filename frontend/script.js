@@ -1,5 +1,9 @@
 // where the trips come from, later this changes to Josue's API
-const DATA_URL = "sample-trips.json";
+// where the backend API lives, and how many pages of 200 trips to load from it
+const API_URL = "http://localhost:3000/api";
+const API_PAGES = 5;
+// if the API is not running, these files are tried in this order
+const FALLBACK_FILES = ["real-trips-sample.json", "sample-trips.json"];
 
 // all the trips we loaded
 let allTrips = [];
@@ -11,8 +15,7 @@ let shownTrips = [];
 async function init() {
     renderMap();
     renderZones();
-    const response = await fetch(DATA_URL);
-    allTrips = await response.json();
+    allTrips = await loadTrips();
     shownTrips = allTrips;
     renderAll(allTrips);
     setupSorting();
@@ -448,3 +451,56 @@ menuBox.addEventListener("click", function (event) {
         menuBtn.setAttribute("aria-expanded", "false");
     }
 });
+
+
+// makes sure every trip has the fields the dashboard uses
+function normalizeTrip(trip) {
+    // some real trips have no zone or borough name, so use "Unknown" instead of null
+    for (const key of ["pu_zone", "pu_borough", "do_zone", "do_borough"]) {
+        if (trip[key] === null || trip[key] === undefined || trip[key] === "null") {
+            trip[key] = "Unknown";
+        }
+    }
+    if (trip.pickup_hour === undefined && trip.pickup_datetime) {
+        trip.pickup_hour = Number(String(trip.pickup_datetime).slice(11, 13));
+    }
+    return trip;
+}
+
+// gets the trips: first from the backend API, and if it is not running, from a file
+async function loadTrips() {
+    try {
+        const trips = [];
+        for (let page = 1; page <= API_PAGES; page++) {
+            const response = await fetch(API_URL + "/trips?limit=200&page=" + page);
+            if (!response.ok) {
+                throw new Error("the API answered " + response.status);
+            }
+            const data = await response.json();
+            trips.push(...data.trips);
+            if (page >= data.pagination.total_pages) {
+                break;
+            }
+        }
+        if (trips.length > 0) {
+            console.log("Loaded " + trips.length + " trips from the API");
+            return trips.map(normalizeTrip);
+        }
+    } catch (error) {
+        console.log("API not available, using a file instead:", error.message);
+    }
+
+    for (const file of FALLBACK_FILES) {
+        try {
+            const response = await fetch(file);
+            if (response.ok) {
+                const trips = await response.json();
+                console.log("Loaded " + trips.length + " trips from " + file);
+                return trips.map(normalizeTrip);
+            }
+        } catch (error) {
+            // that file is missing, so try the next one
+        }
+    }
+    return [];
+}

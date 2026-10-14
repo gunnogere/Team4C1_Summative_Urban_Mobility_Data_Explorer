@@ -1,0 +1,291 @@
+{
+  "summary": {
+    "total_trips": 7590347,
+    "avg_fare": 12.16,
+    "avg_distance_miles": 2.82,
+    "avg_duration_min": 16.6,
+    "avg_speed_mph": 11.68,
+    "airport_trips": 485733,
+    "cross_borough_trips": 825821
+  },
+  "trips_by_hour": [
+    {
+      "hour": 0,
+      "trips": 204797
+    },
+    {
+      "hour": 1,
+      "trips": 147093
+    },
+    {
+      "hour": 2,
+      "trips": 107569
+    },
+    {
+      "hour": 3,
+      "trips": 76531
+    },
+    {
+      "hour": 4,
+      "trips": 59556
+    },
+    {
+      "hour": 5,
+      "trips": 73021
+    },
+    {
+      "hour": 6,
+      "trips": 174346
+    },
+    {
+      "hour": 7,
+      "trips": 299862
+    },
+    {
+      "hour": 8,
+      "trips": 368704
+    },
+    {
+      "hour": 9,
+      "trips": 361168
+    },
+    {
+      "hour": 10,
+      "trips": 356495
+    },
+    {
+      "hour": 11,
+      "trips": 370524
+    },
+    {
+      "hour": 12,
+      "trips": 395630
+    },
+    {
+      "hour": 13,
+      "trips": 398381
+    },
+    {
+      "hour": 14,
+      "trips": 426641
+    },
+    {
+      "hour": 15,
+      "trips": 445601
+    },
+    {
+      "hour": 16,
+      "trips": 413788
+    },
+    {
+      "hour": 17,
+      "trips": 462067
+    },
+    {
+      "hour": 18,
+      "trips": 509926
+    },
+    {
+      "hour": 19,
+      "trips": 470562
+    },
+    {
+      "hour": 20,
+      "trips": 418991
+    },
+    {
+      "hour": 21,
+      "trips": 405630
+    },
+    {
+      "hour": 22,
+      "trips": 365172
+    },
+    {
+      "hour": 23,
+      "trips": 278292
+    }
+  ],
+  "speed_by_hour": [
+    {
+      "hour": 0,
+      "avg_speed_mph": 14.89
+    },
+    {
+      "hour": 1,
+      "avg_speed_mph": 14.86
+    },
+    {
+      "hour": 2,
+      "avg_speed_mph": 15.06
+    },
+    {
+      "hour": 3,
+      "avg_speed_mph": 15.92
+    },
+    {
+      "hour": 4,
+      "avg_speed_mph": 18.27
+    },
+    {
+      "hour": 5,
+      "avg_speed_mph": 18.91
+    },
+    {
+      "hour": 6,
+      "avg_speed_mph": 15.3
+    },
+    {
+      "hour": 7,
+      "avg_speed_mph": 12.23
+    },
+    {
+      "hour": 8,
+      "avg_speed_mph": 10.3
+    },
+    {
+      "hour": 9,
+      "avg_speed_mph": 10.22
+    },
+    {
+      "hour": 10,
+      "avg_speed_mph": 10.46
+    },
+    {
+      "hour": 11,
+      "avg_speed_mph": 10.21
+    },
+    {
+      "hour": 12,
+      "avg_speed_mph": 10.48
+    },
+    {
+      "hour": 13,
+      "avg_speed_mph": 10.73
+    },
+    {
+      "hour": 14,
+      "avg_speed_mph": 10.44
+    },
+    {
+      "hour": 15,
+      "avg_speed_mph": 10.14
+    },
+    {
+      "hour": 16,
+      "avg_speed_mph": 10.47
+    },
+    {
+      "hour": 17,
+      "avg_speed_mph": 10.12
+    },
+    {
+      "hour": 18,
+      "avg_speed_mph": 10.37
+    },
+    {
+      "hour": 19,
+      "avg_speed_mph": 11.46
+    },
+    {
+      "hour": 20,
+      "avg_speed_mph": 12.64
+    },
+    {
+      "hour": 21,
+      "avg_speed_mph": 13.25
+    },
+    {
+      "hour": 22,
+      "avg_speed_mph": 13.71
+    },
+    {
+      "hour": 23,
+      "avg_speed_mph": 14.53
+    }
+  ],
+  "fare_per_mile_by_borough": [
+    {
+      "borough": "Manhattan",
+      "trips": 6892398,
+      "avg_fare_per_mile": 6.43
+    },
+    {
+      "borough": "Queens",
+      "trips": 449273,
+      "avg_fare_per_mile": 4.72
+    },
+    {
+      "borough": "Unknown",
+      "trips": 149615,
+      "avg_fare_per_mile": 6.71
+    },
+    {
+      "borough": "Brooklyn",
+      "trips": 82904,
+      "avg_fare_per_mile": 6.2
+    },
+    {
+      "borough": "Bronx",
+      "trips": 14187,
+      "avg_fare_per_mile": 7.83
+    },
+    {
+      "borough": "null",
+      "trips": 1653,
+      "avg_fare_per_mile": 102.97
+    },
+    {
+      "borough": "Staten Island",
+      "trips": 278,
+      "avg_fare_per_mile": 5.79
+    },
+    {
+      "borough": "EWR",
+      "trips": 39,
+      "avg_fare_per_mile": 302.26
+    }
+  ],
+  "top_pickup_zones": [
+    {
+      "zone": "Upper East Side South",
+      "trips": 331066
+    },
+    {
+      "zone": "Upper East Side North",
+      "trips": 321605
+    },
+    {
+      "zone": "Midtown Center",
+      "trips": 310707
+    },
+    {
+      "zone": "Midtown East",
+      "trips": 275607
+    },
+    {
+      "zone": "Times Sq/Theatre District",
+      "trips": 261690
+    },
+    {
+      "zone": "Penn Station/Madison Sq West",
+      "trips": 259204
+    },
+    {
+      "zone": "Clinton East",
+      "trips": 239047
+    },
+    {
+      "zone": "Murray Hill",
+      "trips": 237583
+    },
+    {
+      "zone": "Union Sq",
+      "trips": 236390
+    },
+    {
+      "zone": "Lincoln Square East",
+      "trips": 234042
+    }
+  ]
+}
