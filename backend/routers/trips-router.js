@@ -2,8 +2,8 @@ const router = require('express').Router()
 const database = require('../models/database')
 
 router.route('/').get(async(req, res) => {
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 50
+    
+    const { page = 1, limit = 50, sort = 'pickup_datetime', order = 'DESC'} = req.validatedQuery
 
     if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 200) {
         return res.status(400).json({message: "Invalid page or limit! Limit must be between 1 and 200."})
@@ -17,11 +17,6 @@ router.route('/').get(async(req, res) => {
         trip_duration_min: 't.trip_duration_min',
         fare_amount: 't.fare_amount'
     }
-
-    const sort = req.query.sort || 'pickup_datetime'
-    
-    // Nyine the dataset can be ordered in ascending or descending order, and we should ensure the text is in a single format, maybe upper case.
-    const order = (req.query.order || 'desc').toUpperCase() 
 
     if (!Object.prototype.hasOwnProperty.call(sortColumns, sort) || !['ASC', 'DESC'].includes(order)) {
         return res.status(400).json({message: 'The sort column or order is invalid!'})

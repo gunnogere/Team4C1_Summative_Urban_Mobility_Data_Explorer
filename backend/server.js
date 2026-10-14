@@ -76,7 +76,7 @@ app.use(['/api/trips', '/api/insights'], (req, res, next) => {
 
     req.filterSQL = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
     req.filterValues = values
-    req.query = value
+    req.validatedQuery = value
 
     next()
 })

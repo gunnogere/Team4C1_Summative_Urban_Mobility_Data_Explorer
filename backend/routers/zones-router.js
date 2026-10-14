@@ -15,7 +15,7 @@ router.route('/').get(async(req, res) => {
 
 router.route('/geojson').get(async(req, res) => {
     try {
-        const [zones] = await database.execute(`SELECT z.location_id, z.borough, z.zone, g.geometry FROM zones z ON g.location_id = z.location_id ORDER BY z.location_id`)
+        const [zones] = await database.execute(`SELECT z.location_id, z.borough, z.zone, g.geometry FROM zones z JOIN zone_geometries g ON g.location_id = z.location_id ORDER BY z.location_id`)
         const features = zones.map(zone => ({
             type: 'Feature',
             id: zone.location_id,
