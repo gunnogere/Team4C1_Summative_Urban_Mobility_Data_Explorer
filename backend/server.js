@@ -108,6 +108,12 @@ const startServer = async() => {
 
         const server = app.listen(PORT, () => {
             console.log(`Server is running on PORT ${PORT}`)
+
+            // The unfiltered dashboard queries take minutes on 7M trips; run them now so users hit the cache.
+            const base = `http://localhost:${PORT}/api`
+            for (const url of ['/insights', '/trips?limit=200&sort=pickup_datetime&order=DESC']) {
+                fetch(base + url).catch(error => console.log('Cache warm-up failed:', error.message))
+            }
         })
 
         server.on('error', async(error) => {

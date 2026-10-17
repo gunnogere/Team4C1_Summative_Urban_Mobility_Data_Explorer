@@ -1,5 +1,8 @@
 const router = require('express').Router()
 const database = require('../models/database')
+const {cached} = require('../models/cache')
+
+const run = (method, sql, values) => cached(method + sql + JSON.stringify(values), () => database[method](sql, values))
 
 router.route('/').get(async(req, res) => {
     
@@ -25,7 +28,7 @@ router.route('/').get(async(req, res) => {
     const offset = (page -1) * limit
 
     try {
-        const [trips] = await database.query(`
+        const [[trips], [counts]] = await Promise.all([run('query', `
             SELECT t.trip_id, t.pickup_datetime, t.dropoff_datetime, t.pu_location_id, 
             t.do_location_id, pu.zone AS pu_zone, pu.borough AS pu_borough, dz.zone AS do_zone, dz.borough AS do_borough,
             t.trip_distance_miles, t.trip_duration_min, t.fare_amount, t.total_amount, t.avg_speed_mph, t.fare_per_mile
@@ -33,11 +36,12 @@ router.route('/').get(async(req, res) => {
             JOIN zones pu ON pu.location_id = t.pu_location_id 
             JOIN zones dz ON dz.location_id = t.do_location_id
             ${req.filterSQL} ORDER BY ${sortColumns[sort]} ${order}, t.trip_id ${order}
-            LIMIT ? OFFSET ?`, [...req.filterValues, limit, offset])
+            LIMIT ? OFFSET ?`, [...req.filterValues, limit, offset]),
         
-        const [counts] = await database.execute(`
+        // Without filters every trip joins a zone, so the joins can be skipped.
+        run('execute', req.filterSQL ? `
             SELECT COUNT(*) As total FROM trips t JOIN zones pu ON pu.location_id = t.pu_location_id JOIN zones dz ON dz.location_id = t.do_location_id
-            ${req.filterSQL}`, req.filterValues)
+            ${req.filterSQL}` : 'SELECT COUNT(*) As total FROM trips', req.filterValues)])
 
         const total = Number(counts[0].total)
 
