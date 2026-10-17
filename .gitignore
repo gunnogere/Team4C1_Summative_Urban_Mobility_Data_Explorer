@@ -10,3 +10,4 @@ etl_pipeline/cleaned_json_data/trips.json
 database/database_dump.sql
 .vscode/
 
+.env
