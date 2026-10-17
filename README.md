@@ -199,12 +199,12 @@ The custom algorithm lives in `algorithms/merge_sort.py`, with pseudocode, stabi
 
 ## 11. Team
 
-| Member | Role | Report section |
-|---|---|---|
-| Joshua Gunnogere Mulongo | Data Engineer / ETL lead | 1: Problem framing and dataset analysis |
-| Moezy | Database and algorithm engineer | 3: Algorithmic logic, pseudo-code and complexity |
-| Josue Nsengiyumva | Backend engineer | 2: System architecture and design decisions |
-| Didier Abizera | Frontend engineer | 4: Three urban mobility insights and visualisations |
+| Member | Role | Email | GitHub | Report section |
+|---|---|---|---|---|
+| Joshua Mulongo | Data Engineer / ETL lead, integration tester and QA, DevOps | j.mulongo@alustudent.com | [@gunnogere](https://github.com/gunnogere) | 1: Problem framing and dataset analysis |
+| Muse Eid | Database & Algorithm Engineer | m.muuse@alustudent.com | [@mmuuse-dot](https://github.com/mmuuse-dot) | 3: Algorithmic logic, pseudo-code and complexity |
+| Josue Rene Nsengiyumva | Backend Engineer | j.nsengiyum@alustudent.com | [@JRene4460011](https://github.com/JRene4460011) | 2: System architecture and design decisions |
+| Didier Abizera | Frontend Engineer | d.abizera@alustudent.com | [@didier-abizera](https://github.com/didier-abizera) | 4: Three urban mobility insights and visualisations |
 
 All members share Section 5 (reflection and future work), the 5-minute video walkthrough and a runnable README.
 
