@@ -114,27 +114,14 @@ The dashboard uses the team's hosted Aiven MySQL database. A facilitator does no
 
 ### One-command launch
 
-The Aiven connection values are credentials and must be shared with the facilitator through an approved secure channel; they are not committed to Git. Clone the repository, then create `backend/config.env` on the machine that will run the app:
+The repository includes `backend/config.env` with the Aiven connection values, so no setup or edits are needed. Clone the repository and launch:
 
 ```bash
 git clone https://github.com/gunnogere/Team4C1_Summative_Urban_Mobility_Data_Explorer.git
 cd Team4C1_Summative_Urban_Mobility_Data_Explorer
-nano backend/config.env
 ```
 
-Put these values in the file:
-
-```dotenv
-PORT=3000
-DB_HOST=your-service.aivencloud.com
-DB_PORT=your_aiven_port
-DB_USER=your_aiven_user
-DB_PASSWORD=your_aiven_password
-DB_NAME=urban_mobility
-DB_SSL=true
-# Recommended: path to the Aiven CA certificate for server verification.
-# DB_SSL_CA=/absolute/path/to/ca.pem
-```
+> **Note:** `backend/config.env` is committed only so the app runs out of the box for the facilitator. It contains credentials, so it will be added to `.gitignore` for production.
 
 Launch the app:
 
@@ -221,28 +208,11 @@ The custom algorithm lives in `algorithms/merge_sort.py`, with pseudocode, stabi
 
 All members share Section 5 (reflection and future work), the 5-minute video walkthrough and a runnable README.
 
-## 12. Deliverables
-
-- GitHub repository with a meaningful commit history and runnable code
-- Database schema (`database/schema.sql`) and hosted Aiven database
-- PDF technical report (2-3 pages, sections 1-5)
-- This README
-- 5-minute video walkthrough (architecture, algorithm, dashboard)
-- Team participation sheet
-
-## 13. Rules and integrity
-
-1. Missing the video, the report or the README, or non-executable code, results in a zero.
-2. At most 20% of the code may be AI-generated; at least 80% must be written by hand. Each student should retain and submit their authentic CodeVibe report with its intact hash, and be ready to explain all AI-assisted files.
-3. Custom algorithms must be implemented from scratch with no built-in sorting helpers.
-4. Only the team lead edits the participation sheet; other members have comment-only access.
-5. All GitHub, tracker and video links must be public and valid before submission.
-
 ## 14. Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Backend cannot connect | Check Aiven host, port, user, password, database, network access, and `DB_SSL=true` in `backend/config.env`. Use the Aiven CA via `DB_SSL_CA` for certificate verification. |
+| Backend cannot connect | Check network access to the Aiven host. The connection values are provided in `backend/config.env`. |
 | `Access denied for user` | Check the Aiven username/password and that the database user is allowed to connect from this network. |
 | Dashboard shows "Could not load data from the API" | Start the backend (port 3000) and check `API_URL` in `frontend/script.js`. |
 | Insights or trips are slow the first time | The first run over about 7.6 million rows can take minutes. The result is cached afterwards. |

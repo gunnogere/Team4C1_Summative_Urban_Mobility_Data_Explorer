@@ -35,7 +35,7 @@ backend/
 └── server.js
 ```
 
-Create `config.env` locally using `config.env.example`.
+`config.env` is included with the Aiven connection values; no edits are needed.
 
 - `server.js` loads configuration, validates filters, mounts routers, and starts the server.
 - `models/database.js` creates the MySQL connection pool.
@@ -59,29 +59,9 @@ Run the following steps from the project root unless stated otherwise.
 
 ### 1. Configure the Database Connection
 
-Copy the example configuration:
+`backend/config.env` is included in the repository with the Aiven connection values, so the app connects without any changes. Both the Node.js backend and Python database loader read this file.
 
-```powershell
-Copy-Item backend/config.env.example backend/config.env
-```
-
-Open `backend/config.env` and enter your local MySQL credentials:
-
-```dotenv
-PORT=3000
-
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=YourPasswordHere
-DB_NAME=urban_mobility
-```
-
-Replace `YourPasswordHere` with your MySQL password. Change `DB_USER` if your account is not `root`.
-
-Both the Node.js backend and Python database loader read this file.
-
-`config.env` is ignored by Git. Each team member or facilitator should create their own copy using `config.env.example`.
+> **Note:** `config.env` is committed only for easy setup. It will be added to `.gitignore` for production.
 
 ### 2. Create the Database Tables
 

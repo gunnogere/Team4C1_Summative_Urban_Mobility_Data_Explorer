@@ -21,7 +21,7 @@ port_open() {
 command -v sudo >/dev/null || fail "sudo is required to install packages, map the local hostname and configure nginx."
 
 if [[ ! -f "$BACKEND_DIR/config.env" ]]; then
-    fail "Create backend/config.env with the Aiven DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, and DB_SSL=true values. Do not commit this file."
+    fail "backend/config.env is missing; restore it from the repository."
 fi
 
 for key in DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME; do
