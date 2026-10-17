@@ -372,3 +372,183 @@ html {
 .top {
     border-bottom: none;
 }
+
+/* loading panel: what is being fetched and how much has arrived */
+#load-status {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--rush);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(22, 53, 59, 0.08);
+}
+#load-status[hidden] {
+    display: none;
+}
+#load-status[data-state="done"] {
+    border-left-color: #2e8b57;
+}
+#load-status[data-state="failed"] {
+    border-left-color: #b3261e;
+}
+.load-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+}
+.load-head span {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: var(--muted);
+}
+.load-note {
+    margin: 6px 0 10px;
+    font-size: 13px;
+    color: var(--muted);
+}
+#load-status ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#load-status li {
+    display: grid;
+    grid-template-columns: 14px minmax(140px, 1fr) minmax(0, 1.4fr);
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+}
+.task-text {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+}
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--line);
+}
+li[data-status="waiting"] .dot,
+li[data-status="receiving"] .dot {
+    border: 2px solid var(--line);
+    border-top-color: var(--rush);
+    background: transparent;
+    animation: spin 0.8s linear infinite;
+}
+li[data-status="receiving"] .dot {
+    border-top-color: var(--teal);
+}
+li[data-status="done"] .dot {
+    background: #2e8b57;
+}
+li[data-status="failed"] .dot {
+    background: #b3261e;
+}
+li[data-status="failed"] .task-text {
+    color: #b3261e;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* shimmer on parts that are still loading */
+.loading {
+    position: relative;
+}
+#summary.loading .card p {
+    color: transparent;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e9e2d0 25%, #f6f1e4 50%, #e9e2d0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+.chart-box.loading::after,
+.table-wrap.loading::after {
+    content: "Loading...";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(251, 248, 239, 0.75);
+    font-size: 14px;
+    color: var(--muted);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+.table-wrap.loading {
+    min-height: 120px;
+}
+@keyframes shimmer {
+    to { background-position: -200% 0; }
+}
+@keyframes pulse {
+    50% { opacity: 0.55; }
+}
+
+/* general polish */
+.top {
+    background: linear-gradient(135deg, #123f45, var(--teal));
+    box-shadow: 0 2px 10px rgba(22, 53, 59, 0.25);
+}
+.card,
+.chart-box,
+#filters,
+.table-wrap,
+#map {
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(22, 53, 59, 0.08);
+}
+.card {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(22, 53, 59, 0.15);
+}
+#filters {
+    position: sticky;
+    top: 12px;
+}
+#filters input:focus,
+#filters select:focus {
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+}
+#filters button {
+    transition: filter 0.15s, background 0.15s;
+}
+#apply-btn:hover {
+    filter: brightness(1.1);
+}
+#reset-btn:hover {
+    background: rgba(22, 53, 59, 0.07);
+}
+#trips-table thead th {
+    position: sticky;
+    top: 0;
+}
+#trips-body tr:nth-child(even) {
+    background: rgba(22, 53, 59, 0.035);
+}
+.table-wrap {
+    max-height: 560px;
+    overflow: auto;
+}
+@media (max-width: 900px) {
+    #filters {
+        position: static;
+    }
+}
+@media (max-width: 600px) {
+    #load-status li {
+        grid-template-columns: 14px 1fr;
+    }
+    .task-text {
+        grid-column: 2;
+    }
+}

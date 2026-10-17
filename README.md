@@ -1,6 +1,6 @@
 # NYC Urban Mobility Data Explorer
 
-Team4C1 summative project: an end-to-end analytics dashboard for NYC Yellow Taxi trips (January 2019). Raw trip files are cleaned by an ETL pipeline, stored in MySQL, served by an Express REST API and explored in a browser dashboard.
+Team4C1 summative project: an end-to-end analytics dashboard for NYC Yellow Taxi trips (January 2019). Raw trip files are cleaned by an ETL pipeline, stored in the team's hosted Aiven MySQL database, served by an Express REST API and explored in a browser dashboard.
 
 ## Links
 
@@ -28,9 +28,9 @@ flowchart LR
     ETL --> JSON[cleaned_json_data<br/>one JSON per table]
     ETL --> LOG[docs/Exclusion_Log.csv<br/>Exclusion_Summary.json]
     JSON --> LOAD[load_db.js]
-    LOAD --> DB[(MySQL<br/>urban_mobility)]
+    LOAD --> DB[(Aiven MySQL<br/>urban_mobility)]
     DB --> API[backend<br/>Express API :3000]
-    API --> UI[frontend<br/>HTML / CSS / JS :8001]
+    API --> UI[frontend<br/>HTML / CSS / JS<br/>nginx :80]
 ```
 
 | Layer | Technology | Folder |
@@ -52,9 +52,10 @@ The ETL stages its output as JSON (one file per table) so a failed database load
 ├── docs/              # exclusion log/summary, algorithm analysis
 ├── etl_pipeline/      # ETL, DB loader, raw and cleaned data
 ├── frontend/          # dashboard (index.html, script.js, style.css)
-├── setup_db.sh        # interactive MySQL setup + data load + backend start
-├── setup_sd_server.sh # install MySQL and create the database and tables only
-├── import_to_omline_db.sh # import database_dump.sql into the hosted database
+├── start_app.sh       # Ubuntu launcher: backend + local frontend + browser tab
+├── setup_db.sh        # optional local MySQL setup + data load + backend start
+├── setup_sd_server.sh # optional local MySQL installation and schema setup
+├── import_to_omline_db.sh # legacy dump import helper; not needed for normal app use
 └── README.md
 ```
 
@@ -107,87 +108,57 @@ npm run etl        # about 2 minutes, writes cleaned_json_data/ and the docs/ lo
 
 Exclusions are listed in `docs/Exclusion_Log.csv` (reason and raw line) and counted in `docs/Exclusion_Summary.json`.
 
-## 6. Setup and run
+## 6. Run the app (Ubuntu 24)
 
-### Prerequisites
+The dashboard uses the team's hosted Aiven MySQL database. A facilitator does not need to install MySQL, download the trip CSV, run the ETL, or import a database dump. Only `sudo`, a browser, and network access are required; the launcher installs Node.js, npm and nginx with `apt` when they are missing.
 
-Node.js 18+ and npm, MySQL Server (or MariaDB), and `python3` for serving the frontend. `trips.json` (about 4.5 GB) is not in git, so create it with `npm run etl` or restore the database from a dump.
+### One-command launch
 
-### Option A: load from the cleaned JSON
-
-```bash
-cd etl_pipeline
-npm run setup-db   # installs MySQL if needed, creates the DB, tables and app user
-npm run load       # loads the JSON files, then verifies row counts
-```
-
-`setup-db` asks for a database user and password, saves them to `etl_pipeline/.env` (git-ignored) and can be answered with Enter for defaults. Loading about 7.59 million trips takes several minutes, so do not interrupt it.
-
-Alternatively, from the project root, `./setup_db.sh` does the setup, data load and backend start in one interactive run.
-
-### Option B: install MySQL and create the tables only
-
-Put your credentials in `backend/config.env` (see `backend/config.env.example`), then:
+The Aiven connection values are credentials and must be shared with the facilitator through an approved secure channel; they are not committed to Git. Clone the repository, then create `backend/config.env` on the machine that will run the app:
 
 ```bash
-./setup_sd_server.sh
+git clone https://github.com/gunnogere/Team4C1_Summative_Urban_Mobility_Data_Explorer.git
+cd Team4C1_Summative_Urban_Mobility_Data_Explorer
+nano backend/config.env
 ```
 
-It installs MySQL if missing, creates the database and user, and applies `database/schema.sql`.
-
-### Option C: import a dump into a hosted MySQL
-
-```bash
-./import_to_omline_db.sh     # reads database/database_dump.sql
-```
-
-Host, port, user, password and database name can be overridden with `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` and `DB_NAME`. The dump was made from MariaDB, so the script rewrites `uca1400` collations to MySQL-compatible ones on the fly.
-
-### Start the backend
-
-Create `backend/config.env`:
+Put these values in the file:
 
 ```dotenv
 PORT=3000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_user
-DB_PASSWORD=your_password
+DB_HOST=your-service.aivencloud.com
+DB_PORT=your_aiven_port
+DB_USER=your_aiven_user
+DB_PASSWORD=your_aiven_password
 DB_NAME=urban_mobility
+DB_SSL=true
+# Recommended: path to the Aiven CA certificate for server verification.
+# DB_SSL_CA=/absolute/path/to/ca.pem
 ```
+
+Launch the app:
 
 ```bash
-cd backend
-npm install
-node server.js     # run from backend/: config.env is read from the working directory
+./start_app.sh
 ```
 
-Expected output:
+The script installs Node.js, npm and nginx if they are missing (Node.js 18+ is required), installs backend packages, starts the API with `npm start`, adds `127.0.0.1 team4c1-mobility.test` to `/etc/hosts`, copies the frontend to `/var/www/team4c1-mobility`, adds an nginx site (`/etc/nginx/conf.d/team4c1-mobility.conf`) that serves it on port 80, and opens a new browser tab at **http://team4c1-mobility.test**. It asks for `sudo` for package installation, `/etc/hosts` and nginx. Because nginx routes by host name, an existing nginx default site on port 80 does not conflict. It does not install or configure a local database. Logs are written under `/tmp`.
 
-```text
-MYSQL Database is Connected Successfully!
-Server is running on PORT 3000
-```
+The requested `.app` hostname is not used: browsers preload HTTPS enforcement for the `.app` top-level domain, so an HTTP-only local server is upgraded to HTTPS. The underscore in `team4c1_mobility.app` is also not a standards-compliant hostname. The reserved `.test` domain and hyphens provide a local URL that works over HTTP.
 
-On startup the backend runs the unfiltered dashboard queries once to fill an in-memory cache (10-minute lifetime). On the full dataset the first insights result can take a few minutes, after which responses are fast.
+For direct backend development, run `cd backend && npm start`. The frontend requests `http://localhost:3000/api` and loads Chart.js, Leaflet, map tiles and fonts from the internet. The first dashboard queries against the full dataset can take a few minutes.
 
-### Start the frontend
+### Optional data rebuild / local database development
 
-The frontend is static and needs a web server. From the project root:
-
-```bash
-python3 -m http.server 8001
-```
-
-Open http://localhost:8001/frontend/. The page reads from `http://localhost:3000/api` (the `API_URL` line at the top of `frontend/script.js`) and also loads Chart.js, Leaflet, map tiles and fonts from the internet.
+The ETL and local MySQL setup remain available for maintainers who need to reproduce the dataset. Follow the [ETL guide](etl_pipeline/README.md), then use `npm run setup-db` and `npm run load` from `etl_pipeline/`, or the optional root scripts. These steps are not part of the facilitator's normal startup flow.
 
 ### Quick check
 
 ```bash
-curl localhost:3000/api/zones
-curl localhost:3000/api/zones/geojson
-curl "localhost:3000/api/trips?page=1&limit=20"
-curl localhost:3000/api/insights
+curl http://localhost:3000/api/zones
+curl http://localhost:3000/api/zones/geojson
+curl "http://localhost:3000/api/trips?page=1&limit=20"
+curl http://localhost:3000/api/insights
 ```
 
 ## 7. API reference
@@ -223,9 +194,23 @@ Filtering and sorting are done by the API; there is no file fallback, so the bac
 
 ## 9. Custom algorithm
 
-The custom algorithm lives in `algorithms/` (`merge_sort.py`), with its pseudo-code and complexity analysis in `docs/algorithm_analysis.md`. Per the project rules, it is written with plain control structures, without `sort()`, `heapq`, Pandas `.sort_values()` or SQL `ORDER BY`.
+The custom algorithm lives in `algorithms/merge_sort.py`, with pseudocode, stability, and complexity analysis in [docs/algorithm_analysis.md](docs/algorithm_analysis.md). It uses recursion and loops, not Python's built-in sorting helpers.
 
-## 10. Team
+## 10. Rubric evidence
+
+| Rubric criterion | Evidence in this submission |
+|---|---|
+| Backend logic and data handling | ETL rules, exclusions, corrections, flags, derived features and row counts in this README, `etl_pipeline/src/etl.js`, and `docs/Exclusion_Log.csv` / `docs/Exclusion_Summary.json`; validated API filters and pagination in `backend/routers/`. |
+| Architecture and database design | Architecture diagram above; normalized dimensions/fact table, foreign keys and indexes in `database/schema.sql`. |
+| Frontend and insight presentation | Seven KPIs, four charts, filters, map, and sortable trip table in `frontend/`; frontend usage details in `frontend/README.md`. |
+| Algorithm / DSA | Manual merge sort in `algorithms/merge_sort.py`; pseudocode and complexity in `docs/algorithm_analysis.md`. |
+| Code quality and reproducibility | Modular ETL, API routers and frontend files; Ubuntu startup steps and per-folder guides. |
+| Video walkthrough | [5-minute walkthrough folder](https://drive.google.com/drive/folders/1RjtggmX7TIDU65Tzd7HYHVOKduUQpOqr?usp=drive_link). Ensure the final video explains the architecture, algorithm, dashboard, and findings. |
+| Product quality and storytelling | The dashboard connects taxi demand, speed, borough and route patterns. For January 2019, the current summary shows the largest hourly trip count at 18:00 (509,926 trips), while average speed at 17:00 is 10.12 mph versus 18.91 mph at 05:00; the map and filters let viewers investigate where and when these patterns occur. |
+| Technical report and reflection | [Technical report folder](https://drive.google.com/drive/folders/13K72DA_q3OvyeUffRLacCBH9Fs13zseJ?usp=drive_link). Include reasoning, insights, architecture, data decisions, challenges, and reflection. |
+| Individual effort and AI verification | The [team participation sheet](https://docs.google.com/spreadsheets/d/1WCFntWARypndTvvnE96RubS0UG_TBQ_wbSkPMJvA4II/edit?gid=0#gid=0), Git commit history, and each student's authentic CodeVibe report provide the evidence. Each contributor must understand and disclose AI-assisted work; README content alone cannot establish individual effort or guarantee a grade. |
+
+## 11. Team
 
 | Member | Role | Report section |
 |---|---|---|
@@ -236,30 +221,29 @@ The custom algorithm lives in `algorithms/` (`merge_sort.py`), with its pseudo-c
 
 All members share Section 5 (reflection and future work), the 5-minute video walkthrough and a runnable README.
 
-## 11. Deliverables
+## 12. Deliverables
 
 - GitHub repository with a meaningful commit history and runnable code
-- Database schema and dump (`database/schema.sql`, `database/database_dump.sql`)
+- Database schema (`database/schema.sql`) and hosted Aiven database
 - PDF technical report (2-3 pages, sections 1-5)
 - This README
 - 5-minute video walkthrough (architecture, algorithm, dashboard)
 - Team participation sheet
 
-## 12. Rules and integrity
+## 13. Rules and integrity
 
 1. Missing the video, the report or the README, or non-executable code, results in a zero.
-2. At most 20% of the code may be AI-generated; at least 80% must be written by hand.
+2. At most 20% of the code may be AI-generated; at least 80% must be written by hand. Each student should retain and submit their authentic CodeVibe report with its intact hash, and be ready to explain all AI-assisted files.
 3. Custom algorithms must be implemented from scratch with no built-in sorting helpers.
 4. Only the team lead edits the participation sheet; other members have comment-only access.
 5. All GitHub, tracker and video links must be public and valid before submission.
 
-## 13. Troubleshooting
+## 14. Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| Backend cannot connect | Check that MySQL is running and `backend/config.env` has the right host, port, user, password and database. |
-| `Access denied for user` | Wrong password for that host. A local server and a hosted one often have different passwords. |
-| `Unknown collation: utf8mb4_uca1400_ai_ci` | The dump came from MariaDB. Use `import_to_omline_db.sh`, which rewrites it. |
+| Backend cannot connect | Check Aiven host, port, user, password, database, network access, and `DB_SSL=true` in `backend/config.env`. Use the Aiven CA via `DB_SSL_CA` for certificate verification. |
+| `Access denied for user` | Check the Aiven username/password and that the database user is allowed to connect from this network. |
 | Dashboard shows "Could not load data from the API" | Start the backend (port 3000) and check `API_URL` in `frontend/script.js`. |
 | Insights or trips are slow the first time | The first run over about 7.6 million rows can take minutes. The result is cached afterwards. |
 | Zone names empty or `null` | The data was loaded from a `zones.json` made before the zone parsing fix. Re-run `npm run etl` and `npm run load`. |
@@ -267,4 +251,4 @@ All members share Section 5 (reflection and future work), the 5-minute video wal
 | `max_allowed_packet` error while loading | `sudo mysql -e "SET GLOBAL max_allowed_packet=268435456"`, then load again. |
 | Port 3000 already in use | Stop the other process or change `PORT` in `config.env`. |
 
-Per-folder details are in `backend/README.md`, `database/README.md`, `etl_pipeline/README.md` and `frontend/README.md`.
+Per-folder details are in [backend/README.md](backend/README.md), [database/README.md](database/README.md), [etl_pipeline/README.md](etl_pipeline/README.md) and [frontend/README.md](frontend/README.md).

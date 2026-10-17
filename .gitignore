@@ -4,9 +4,9 @@
 node_modules/
 # Virtual environment
 venv/
-# Environment variables
-.env
 # Generated output exceeds 100MB
 etl_pipeline/cleaned_json_data/trips.json
+# Database exports must not be committed
+database/database_dump.sql
 .vscode/
 

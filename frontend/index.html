@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500&family=Public+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -30,6 +30,22 @@
     </header>
 
     <main class="page">
+
+        <!-- shows what is being fetched from the backend and how much has arrived -->
+        <section id="load-status" data-state="loading" aria-live="polite">
+            <div class="load-head">
+                <strong>Loading data from the database</strong>
+                <span id="load-count">0 of 5 loaded</span>
+            </div>
+            <p class="load-note">The first load scans about 7.6 million trips, so it can take a while. Parts of the page fill in as soon as their data arrives.</p>
+            <ul>
+                <li id="task-summary" data-status="waiting"><span class="dot"></span><span class="task-name">Summary figures (counts every trip)</span><span class="task-text">Waiting...</span></li>
+                <li id="task-hourly" data-status="waiting"><span class="dot"></span><span class="task-name">Trips and speed by hour</span><span class="task-text">Waiting...</span></li>
+                <li id="task-places" data-status="waiting"><span class="dot"></span><span class="task-name">Boroughs and busiest pickup zones</span><span class="task-text">Waiting...</span></li>
+                <li id="task-trips" data-status="waiting"><span class="dot"></span><span class="task-name">Trips table (first 200 rows)</span><span class="task-text">Waiting...</span></li>
+                <li id="task-zones" data-status="waiting"><span class="dot"></span><span class="task-name">Taxi zone map shapes</span><span class="task-text">Waiting...</span></li>
+            </ul>
+        </section>
 
         <!-- seven small cards with the main numbers -->
         <section id="summary">
@@ -86,22 +102,22 @@
 
             <!-- four charts in a 2 by 2 grid -->
             <section id="charts">
-                <div class="chart-box">
+                <div class="chart-box" id="hour-box">
                     <h3>When does NYC ride? Trips by hour</h3>
                     <div class="chart-wrap"><canvas id="hour-chart"></canvas></div>
                 </div>
 
-                <div class="chart-box">
+                <div class="chart-box" id="speed-box">
                     <h3>Average speed by hour</h3>
                     <div class="chart-wrap"><canvas id="speed-chart"></canvas></div>
                 </div>
 
-                <div class="chart-box">
+                <div class="chart-box" id="fare-box">
                     <h3>Fare per mile by borough</h3>
                     <div class="chart-wrap"><canvas id="fare-chart"></canvas></div>
                 </div>
 
-                <div class="chart-box">
+                <div class="chart-box" id="zones-box">
                     <h3>Busiest pickup zones</h3>
                     <div class="chart-wrap"><canvas id="zones-chart"></canvas></div>
                 </div>
@@ -118,7 +134,7 @@
         <!-- table of single trips, the headers are used for sorting -->
         <section id="table-section">
             <h2>Trips</h2>
-            <div class="table-wrap">
+            <div class="table-wrap" id="table-wrap">
                 <table id="trips-table">
                     <thead>
                         <tr>
@@ -149,6 +165,6 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js?v=3"></script>
+    <script src="script.js?v=4"></script>
 </body>
 </html>

@@ -5,24 +5,137 @@ const TABLE_LIMIT = 200;
 
 // loads the data from the API and fills the page
 async function init() {
-    renderMap();
-    renderZones();
-    await refresh();
     setupSorting();
     document.getElementById("apply-btn").addEventListener("click", applyFilters);
     document.getElementById("reset-btn").addEventListener("click", resetFilters);
     document.getElementById("close-detail").addEventListener("click", function () {
         document.getElementById("trip-detail").close();
     });
+    renderMap();
+    // every endpoint is requested at once, each part of the page draws as soon as its data arrives
+    await Promise.all([renderZones(), refresh()]);
 }
 
-// asks the API for one endpoint and returns its JSON
-async function getJson(path) {
-    const response = await fetch(API_URL + path);
-    if (!response.ok) {
-        throw new Error("the API answered " + response.status + " for " + path);
+// what the page is waiting for, shown in the loading panel
+const TASKS = {
+    summary: "Summary figures (counts every trip)",
+    hourly: "Trips and speed by hour",
+    places: "Boroughs and busiest pickup zones",
+    trips: "Trips table (first 200 rows)",
+    zones: "Taxi zone map shapes"
+};
+const taskState = {};
+let paintTimer = null;
+let hideTimer = null;
+
+function formatBytes(bytes) {
+    if (bytes < 1024) {
+        return bytes + " B";
     }
-    return response.json();
+    if (bytes < 1024 * 1024) {
+        return (bytes / 1024).toFixed(1) + " KB";
+    }
+    return (bytes / 1024 / 1024).toFixed(2) + " MB";
+}
+
+function seconds(state) {
+    return (((state.end || performance.now()) - state.start) / 1000).toFixed(1) + "s";
+}
+
+function startTask(id) {
+    taskState[id] = { status: "waiting", received: 0, total: 0, start: performance.now(), end: null };
+}
+
+function finishTask(id, status) {
+    taskState[id].status = status;
+    taskState[id].end = performance.now();
+    paintTasks();
+}
+
+// writes the status of every task into the loading panel
+function paintTasks() {
+    const panel = document.getElementById("load-status");
+    let finished = 0;
+    let failed = 0;
+
+    for (const id of Object.keys(TASKS)) {
+        const state = taskState[id];
+        const row = document.getElementById("task-" + id);
+        if (!state) {
+            continue;
+        }
+        let text;
+        if (state.status === "waiting") {
+            text = "Waiting for the database... " + seconds(state);
+        } else if (state.status === "receiving") {
+            const percent = state.total ? " of " + formatBytes(state.total) + " (" + Math.round(state.received / state.total * 100) + "%)" : "";
+            text = "Receiving " + formatBytes(state.received) + percent;
+        } else if (state.status === "done") {
+            text = "Done - " + formatBytes(state.received) + " in " + seconds(state);
+            finished++;
+        } else {
+            text = "Failed - check that the backend is running, then press Apply";
+            failed++;
+        }
+        row.dataset.status = state.status;
+        row.querySelector(".task-text").textContent = text;
+    }
+
+    const total = Object.keys(TASKS).length;
+    const pending = Object.values(taskState).some(function (s) { return s.status === "waiting" || s.status === "receiving"; });
+    document.getElementById("load-count").textContent = finished + " of " + total + " loaded";
+    panel.dataset.state = pending ? "loading" : (failed ? "failed" : "done");
+    panel.hidden = false;
+
+    // keep the elapsed seconds ticking while something is still loading
+    if (pending && !paintTimer) {
+        paintTimer = setInterval(paintTasks, 250);
+    }
+    if (!pending) {
+        clearInterval(paintTimer);
+        paintTimer = null;
+        clearTimeout(hideTimer);
+        if (!failed) {
+            hideTimer = setTimeout(function () { panel.hidden = true; }, 3000);
+        }
+    } else {
+        clearTimeout(hideTimer);
+    }
+}
+
+// asks the API for one endpoint, counting the bytes as they arrive, and returns its JSON
+async function getJson(id, path, signal) {
+    startTask(id);
+    paintTasks();
+    try {
+        const response = await fetch(API_URL + path, { signal: signal });
+        if (!response.ok) {
+            throw new Error("the API answered " + response.status + " for " + path);
+        }
+        const state = taskState[id];
+        state.status = "receiving";
+        state.total = Number(response.headers.get("Content-Length")) || 0;
+
+        const reader = response.body.getReader();
+        const chunks = [];
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            chunks.push(value);
+            state.received += value.length;
+            paintTasks();
+        }
+        const data = JSON.parse(await new Blob(chunks).text());
+        finishTask(id, "done");
+        return data;
+    } catch (error) {
+        if (error.name !== "AbortError") {
+            finishTask(id, "failed");
+        }
+        throw error;
+    }
 }
 
 // reads the filter boxes into a query string for the API
@@ -46,29 +159,60 @@ function filterQuery() {
     return params;
 }
 
-// gets the insights and the trips for the current filters and redraws the page
+// the request that is currently running, so a newer filter can cancel it
+let currentRequest = null;
+
+// marks parts of the page as loading (shimmer on cards, charts and table)
+function setLoading(ids, on) {
+    for (const id of ids) {
+        document.getElementById(id).classList.toggle("loading", on);
+    }
+}
+
+// asks for the summary, hourly, places and trips at the same time and draws each one when it arrives
 async function refresh() {
+    if (currentRequest) {
+        currentRequest.abort();
+    }
+    currentRequest = new AbortController();
+    const signal = currentRequest.signal;
+
     const params = filterQuery();
     const tripParams = new URLSearchParams(params);
     tripParams.set("limit", TABLE_LIMIT);
     tripParams.set("sort", sortField);
     tripParams.set("order", sortAscending ? "ASC" : "DESC");
 
-    try {
-        const [insights, trips] = await Promise.all([
-            getJson("/insights?" + params),
-            getJson("/trips?" + tripParams)
-        ]);
-        renderSummary(insights.summary);
-        renderTable(trips.trips.map(normalizeTrip));
-        renderHourChart(insights.trips_by_hour);
-        renderSpeedChart(insights.speed_by_hour);
-        renderFareChart(insights.fare_by_borough);
-        renderZonesChart(insights.top_pickup_zones);
-    } catch (error) {
-        console.error(error);
-        alert("Could not load data from the API. Is the backend running?");
-    }
+    const jobs = [
+        ["summary", "/insights/summary?" + params, ["summary"], function (data) {
+            renderSummary(data.summary);
+        }],
+        ["hourly", "/insights/hourly?" + params, ["hour-box", "speed-box"], function (data) {
+            renderHourChart(data.trips_by_hour);
+            renderSpeedChart(data.speed_by_hour);
+        }],
+        ["places", "/insights/places?" + params, ["fare-box", "zones-box"], function (data) {
+            renderFareChart(data.fare_by_borough);
+            renderZonesChart(data.top_pickup_zones);
+        }],
+        ["trips", "/trips?" + tripParams, ["table-wrap"], function (data) {
+            renderTable(data.trips.map(normalizeTrip));
+        }]
+    ];
+
+    await Promise.all(jobs.map(async function ([id, path, areas, draw]) {
+        setLoading(areas, true);
+        try {
+            const data = await getJson(id, path, signal);
+            draw(data);
+            setLoading(areas, false);
+        } catch (error) {
+            if (error.name !== "AbortError") {
+                console.error(error);
+                setLoading(areas, false);
+            }
+        }
+    }));
 }
 
 // fills the seven cards at the top
@@ -248,7 +392,7 @@ function renderMap() {
 async function renderZones() {
     let features;
     try {
-        const geojson = await getJson("/zones/geojson");
+        const geojson = await getJson("zones", "/zones/geojson");
         features = geojson.features.map(function (feature) {
             const p = feature.properties;
             return {

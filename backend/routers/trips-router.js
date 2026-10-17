@@ -38,10 +38,8 @@ router.route('/').get(async(req, res) => {
             ${req.filterSQL} ORDER BY ${sortColumns[sort]} ${order}, t.trip_id ${order}
             LIMIT ? OFFSET ?`, [...req.filterValues, limit, offset]),
         
-        // Without filters every trip joins a zone, so the joins can be skipped.
-        run('execute', req.filterSQL ? `
-            SELECT COUNT(*) As total FROM trips t JOIN zones pu ON pu.location_id = t.pu_location_id JOIN zones dz ON dz.location_id = t.do_location_id
-            ${req.filterSQL}` : 'SELECT COUNT(*) As total FROM trips', req.filterValues)])
+        // The count never needs the zone joins.
+        run('execute', `SELECT COUNT(*) As total FROM trips t ${req.countFilterSQL}`, req.filterValues)])
 
         const total = Number(counts[0].total)
 

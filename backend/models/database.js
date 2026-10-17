@@ -1,4 +1,11 @@
 const mysql = require('mysql2/promise')
+const fs = require('fs')
+
+const ssl = process.env.DB_SSL === 'true'
+    ? (process.env.DB_SSL_CA
+        ? {ca: fs.readFileSync(process.env.DB_SSL_CA)}
+        : {rejectUnauthorized: false})
+    : undefined
 
 const database = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
@@ -6,6 +13,7 @@ const database = mysql.createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'urban_mobility',
+    ssl,
 
     waitForConnections: true,
     connectionLimit: 10,

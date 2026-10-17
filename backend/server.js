@@ -75,6 +75,8 @@ app.use(['/api/trips', '/api/insights'], (req, res, next) => {
     }
 
     req.filterSQL = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+    // Same filter without the zones join, for queries that only count or aggregate trips.
+    req.countFilterSQL = req.filterSQL.replace('pu.borough = ?', 't.pu_location_id IN (SELECT location_id FROM zones WHERE borough = ?)')
     req.filterValues = values
     req.validatedQuery = value
 
@@ -109,9 +111,9 @@ const startServer = async() => {
         const server = app.listen(PORT, () => {
             console.log(`Server is running on PORT ${PORT}`)
 
-            // The unfiltered dashboard queries take minutes on 7M trips; run them now so users hit the cache.
+            // The unfiltered dashboard queries are slow on 7M trips; run them now so users hit the cache.
             const base = `http://localhost:${PORT}/api`
-            for (const url of ['/insights', '/trips?limit=200&sort=pickup_datetime&order=DESC']) {
+            for (const url of ['/insights/summary', '/zones/geojson', '/trips?limit=200&sort=pickup_datetime&order=ASC']) {
                 fetch(base + url).catch(error => console.log('Cache warm-up failed:', error.message))
             }
         })
