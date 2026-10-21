@@ -17,7 +17,12 @@ port_open() {
     (echo > "/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1
 }
 
-[[ "$(uname -s)" == "Linux" ]] || fail "This launcher is for Linux (Ubuntu 24)."
+OS_NAME="$(uname -s)"
+IS_WSL=0
+if [[ "$OS_NAME" == "Linux" ]] && { [[ -n "${WSL_INTEROP:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; }; then
+    IS_WSL=1
+fi
+[[ "$OS_NAME" == "Linux" ]] || fail "The app launcher currently requires Linux (Ubuntu 24). The host mapping supports macOS at /etc/hosts, but the nginx setup is Linux-specific."
 command -v sudo >/dev/null || fail "sudo is required to install packages, map the local hostname and configure nginx."
 
 if [[ ! -f "$BACKEND_DIR/config.env" ]]; then
@@ -44,11 +49,35 @@ fi
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
 (( node_major >= 18 )) || fail "Node.js $node_major found; Node.js 18 or newer is required."
 
-if ! getent hosts "$APP_HOST" | awk '$1 == "127.0.0.1" {found=1} END {exit !found}'; then
-    if getent hosts "$APP_HOST" >/dev/null; then
-        fail "$APP_HOST already resolves to a non-loopback address; update /etc/hosts before continuing."
+ensure_hosts_entry() {
+    local hosts_file="$1"
+    if awk -v host="$APP_HOST" '$1 !~ /^#/ {for (i=2; i<=NF; i++) if ($i==host) { if ($1=="127.0.0.1") found=1; else conflict=1 }} END {exit !(found || conflict)}' "$hosts_file"; then
+        if ! awk -v host="$APP_HOST" '$1 !~ /^#/ {for (i=2; i<=NF; i++) if ($i==host && $1=="127.0.0.1") found=1} END {exit !found}' "$hosts_file"; then
+            fail "$APP_HOST already maps to a non-loopback address in $hosts_file; update it before continuing."
+        fi
+        return
     fi
-    printf '127.0.0.1 %s\n' "$APP_HOST" | sudo tee -a /etc/hosts >/dev/null
+    printf '127.0.0.1 %s\n' "$APP_HOST" | sudo tee -a "$hosts_file" >/dev/null
+}
+
+# The Linux hosts file is needed for tools running inside WSL. Windows browsers
+# read the Windows hosts file, so also register the name there for WSL users.
+ensure_hosts_entry /etc/hosts
+if (( IS_WSL )); then
+    printf 'WSL detected; adding %s to the Windows hosts file for Windows browsers...\n' "$APP_HOST"
+    WIN_HOSTS_FILE='/mnt/c/Windows/System32/drivers/etc/hosts'
+    if [[ -f "$WIN_HOSTS_FILE" ]]; then
+        if ! powershell.exe -NoProfile -Command "if (Select-String -Path 'C:\Windows\System32\drivers\etc\hosts' -Pattern '(?m)^\\s*127\\.0\\.0\\.1\\s+.*\\b$APP_HOST\\b') { exit 0 } else { exit 1 }" >/dev/null 2>&1; then
+            PS_COMMAND="Add-Content -Path 'C:\Windows\System32\drivers\etc\hosts' -Value '127.0.0.1 $APP_HOST'"
+            PS_ARGUMENTS="-NoProfile -ExecutionPolicy Bypass -Command \"$PS_COMMAND\""
+            powershell.exe -NoProfile -Command "Start-Process -FilePath powershell.exe -Verb RunAs -Wait -ArgumentList '$PS_ARGUMENTS'" >/dev/null 2>&1 || true
+            if ! powershell.exe -NoProfile -Command "if (Select-String -Path 'C:\Windows\System32\drivers\etc\hosts' -Pattern '(?m)^\\s*127\\.0\\.0\\.1\\s+.*\\b$APP_HOST\\b') { exit 0 } else { exit 1 }" >/dev/null 2>&1; then
+                printf 'Windows hosts update needs administrator approval. Add this line manually to C:\\Windows\\System32\\drivers\\etc\\hosts:\n127.0.0.1 %s\n' "$APP_HOST" >&2
+            fi
+        fi
+    else
+        printf 'Windows hosts file not mounted at %s; add 127.0.0.1 %s to the Windows hosts file if Windows browsers cannot resolve the app.\n' "$WIN_HOSTS_FILE" "$APP_HOST" >&2
+    fi
 fi
 
 if [[ ! -d "$BACKEND_DIR/node_modules" ]]; then
